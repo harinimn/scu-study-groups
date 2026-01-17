@@ -4,17 +4,27 @@
       "codebase": "default",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
-        "node_modules",
+        "venv",
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"
       ],
       "source": "functions",
-      "runtime": "python313",
-      "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run lint"
-      ]
+      "runtime": "python313"
+    },
+    {
+      "source": "scu-study-groups",
+      "codebase": "scu-study-groups",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "venv",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "runtime": "python313"
     }
   ],
   "apphosting": {
@@ -45,7 +55,6 @@
   "emulators": {
     "apphosting": {
       "port": 5002,
-      "startCommand": "npm run",
       "rootDirectory": "./"
     },
     "functions": {
