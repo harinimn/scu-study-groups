@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sign In • SCU Study Groups</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <main class="profilePage">
+            <div class="profileCard">
+                <div class="authHeader">
+                    <div class="authIcon">👤</div>
+                    <h1 class="authTitle">Set Up Your Profile</h1>
+                    <p class="authText">Customize what information you share and who can see it. All field are optional.</p>
+                </div>
+
+                <div class="visibilityBox">
+                    <div class="visHeader">
+                        <span class="visIcon">👁️</span>
+                        <div>
+                        <div class="visTitle">Overall Profile Visibility</div>
+                        <div class="visDesc">
+                            Controls who can see your profile. Individual fields can only be more restrictive.
+                        </div>
+                        </div>
+                    </div>
+
+                    <select class="selectRow" id="overallVis">
+                        <option>People in same course</option>
+                        <option>My connections only</option>
+                        <option>Everyone</option>
+                        <option>No one</option>
+                    </select>
+                </div>
+                <div class="tipBox">
+                    <b>Privacy Tip:</b> Names are optional to reduce intimidation and bias. If you leave your name blank or hide it,
+                    you'll appear as “Anonymous” to others. You can always update these settings later.
+                </div>
+                <div class="fieldGroup">
+                    <label class="label" for="name">Name <span class="muted">(Optional)</span></label>
+                    <input class="textInput" id="name" type="text" placeholder="Leave blank to appear as 'Anonymous'" />
+
+                    <label class="label small" for="nameVis">Who can see your name?</label>
+                    <select class="selectRow" id="nameVis">
+                        <option>My connections only</option>
+                        <option>People in same course</option>
+                        <option>Everyone</option>
+                        <option>No one</option>
+                    </select>
+                </div>                
+            </div>
+        </main>
+    </body>
+</html>

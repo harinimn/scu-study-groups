@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sign In • SCU Study Groups</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <main class="authPage">
+            <div class="authCard">
+                <div class="authHeader">
+                    <div class="authIcon">🔒</div>
+                    <h1 class="authTitle">Welcome</h1>
+                    <p class="authText">Sign up with your SCU email to continue</p>
+                </div>
+
+                <form class="authForm">
+                    <label class="authLabel" for="email">SCU Email</label>
+
+                    <div class="inputRow">
+                    <span class="inputIcon">✉️</span>
+                    <input
+                        class="authInput"
+                        id="email"
+                        type="email"
+                        placeholder="yourname@scu.edu"
+                        autocomplete="email"
+                    />
+                    </div>
+                    <button class="signUpBtn" type="submit">Send Sign-Up Link</button>
+                    <p class="smallMsg" id="msg"></p>
+                </form>
+                <div class="privacyBox">
+                    <b>Privacy &amp; Safety:</b>
+                    Your profile is private by default. You control who can see your information and contact you.
+                    SCU Study Groups is designed to protect your privacy and create a safe space for academic collaboration.
+                </div>
+            </div>
+        </main>
+        <script type="module" src="signup.js"></script>
+    </body>
+</html>
