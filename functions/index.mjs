@@ -8,7 +8,7 @@
  */
 
 import { setGlobalOptions } from "firebase-functions";
-import { onCall } from "firebase-functions/v2/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -20,7 +20,7 @@ export const setup = onCall(async (data, context) => {
   const uid = context.auth.uid;
 
   if (!uid) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+    throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
   }
 
   const def = data.def_vis;
@@ -33,4 +33,22 @@ export const setup = onCall(async (data, context) => {
 
   const res = await db.collection('users').doc(uid).set(data);
   return res;
+});
+
+export const getProf = onCall(async (data, context) => {
+  const uid = context.auth.uid;
+
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+  }
+
+  const res = await db.collection('users').doc(uid).get();
+  let out = res.data();
+  
+  if (out == undefined) {
+    throw new HttpsError('not-found', 'This user  doesn\'t have any data.');
+  }
+
+  await out.delete("courses");
+  return out;
 });
