@@ -8,22 +8,29 @@
  */
 
 import { setGlobalOptions } from "firebase-functions";
-import { onRequest } from "firebase-functions/https";
-import { info } from "firebase-functions/logger";
+import { onCall } from "firebase-functions/v2/https";
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
+initializeApp();
+const db = getFirestore();
 setGlobalOptions({maxInstances: 10});
 
-export const helloWorld = onRequest((request, response) => {
-  info("Hello logs!", {structuredData: true});
-  response.send("Hello from Firebase!");
+export const setup = onCall(async (data, context) => {
+  const uid = context.auth.uid;
+
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+  }
+
+  const def = data.def_vis;
+
+  for (const [key, value] of data) {
+    if (key.endsWith("_vis") && key != "def_vis" && value < def) {
+      data.set(key, def);
+    }
+  }
+
+  const res = await db.collection('users').doc(uid).set(data);
+  return res;
 });
