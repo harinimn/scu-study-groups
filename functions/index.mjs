@@ -6,3 +6,4 @@ setGlobalOptions({maxInstances: 10});
 
 export * as profile from './profile.mjs';
 export * as classes from './classes.mjs';
+export * as visible from './visibility.mjs';

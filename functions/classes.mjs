@@ -94,7 +94,7 @@ export const listSection = onCall(async (data, context) => {
     }
     
     const modifier = (data.quarter < data.cur ? "past" : (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis";
-    const query = await db.collection("users").where(modifier, "!=", 0).where(new FieldPath('classes', data.quarter), "array-contains", data.class).get();
+    const query = await db.collection("users").where(modifier, "!=", 5).where(new FieldPath('classes', data.quarter), "array-contains", data.class).get();
     const classes = res.get("classes");
     const connections = res.get("connections");
     const groups = db.collection("groups");
@@ -120,7 +120,7 @@ export const listCourse = onCall(async (data, context) => {
     }
     
     const modifier = (data.quarter < data.cur ? "past" : (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis";
-    const query = await db.collection("users").where(modifier, "!=", 0).get();
+    const query = await db.collection("users").where(modifier, "!=", 5).get();
     const classes = res.get("classes");
     const connections = res.get("connections");
     const groups = db.collection("groups");

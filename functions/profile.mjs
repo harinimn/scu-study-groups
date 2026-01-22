@@ -4,8 +4,6 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-import { checkVis } from "./visibility.mjs";
-
 initializeApp();
 const db = getFirestore();
 
@@ -40,5 +38,24 @@ export const get = onCall(async (data, context) => {
     let out = res.data();
     out.delete("courses");
     out.delete("connections");
+    out.delete("pending");
     return out;
+});
+
+export const sendConnection = onCall(async (data, context) => {
+    const uid = context.auth.uid;
+    if (!uid) {
+        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+    }
+
+    const ref = db.doc("users/" + uid);
+    const res = await ref.get();
+    if (!res.exists) {
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+    }
+
+    var pend = res.get("pending");
+    pend.push(uid);
+    ref.set({pending: pend});
+    //TODO send an email notification
 });
