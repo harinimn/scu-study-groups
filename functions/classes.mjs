@@ -17,7 +17,7 @@ export const getClasses = onCall(async (data, context) => {
     
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user  doesn\'t have any data.');
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
     }
     
     let store = res.get("classes");
@@ -38,7 +38,7 @@ export const addClass = onCall(async (data, context) => {
     const ref = db.doc("users/" + uid);
     const doc = await ref.get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user  doesn\'t have any data.');
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
     }
     
     var classes = doc.get("classes");
@@ -66,7 +66,7 @@ export const delClass = onCall(async (data, context) => {
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user  doesn\'t have any data.');
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
     }
         
     var classes = res.get("classes");
@@ -90,7 +90,7 @@ export const listSection = onCall(async (data, context) => {
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user  doesn\'t have any data.');
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
     }
     
     const modifier = (data.quarter < data.cur ? "past" : (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis";
@@ -100,7 +100,7 @@ export const listSection = onCall(async (data, context) => {
     var out = [];
     query.forEach(ref => {
         const vis = ref.get(modifier);
-        if (vis <= 2 || checkVis(connections, classes, uid, ref.get("classes").get(data.quarter), ref.id, vis, db.collection("groups"))) {
+        if (vis <= 2 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, db.collection("groups"))) {
             out.push(ref.id);
         }
     });
@@ -115,12 +115,12 @@ export const listCourse = onCall(async (data, context) => {
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user  doesn\'t have any data.');
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
     }
     
     const modifier = (data.quarter < data.cur ? "past" : (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis";
     const query = await db.collection("users").where(modifier, "!=", 0).get();
-    const classes = res.get("classes").get(data.quarter);
+    const classes = res.get("classes");
     const connections = res.get("connections");
     var out = [];
     query.forEach(ref => {
