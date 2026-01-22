@@ -251,26 +251,63 @@ body {
 }
 
 /* Profile Set Up Page */
+/* Page */
 .profilePage {
   min-height: 100vh;
   background: radial-gradient(circle at top, #f1faf4, #ffffff 60%);
   padding: 48px 24px;
-
   display: flex;
   justify-content: center;
 }
 
+/* Card */
 .profileCard {
   width: 100%;
   max-width: 560px;
-  background: white;
+  background: #ffffff;
   border-radius: 14px;
   padding: 28px;
-
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+/* Header (top icon + title) */
+.authHeader {
+  text-align: center;
+}
+
+.authIconWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.authIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #047857;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.authTitle {
+  font-size: 18px;
+  margin: 6px 0 6px;
+  color: #111827;
+  font-weight: 800;
+}
+
+.authText {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(17, 24, 39, 0.65);
+}
+
+/* Overall visibility green box */
 .visibilityBox {
   background: #ecfdf5;
   border: 1px solid #a7f3d0;
@@ -295,33 +332,16 @@ body {
   font-weight: 800;
   color: #065f46;
   margin-bottom: 2px;
+  font-size: 12px;
 }
 
 .visDesc {
   font-size: 12px;
   color: rgba(6, 95, 70, 0.75);
+  line-height: 1.35;
 }
 
-.selectRow {
-  width: 100%;
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  background: #f3f4f6;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 13px;
-  outline: none;
-}
-
-.textInput {
-  width: 100%;
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  background: #f3f4f6;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 14px;
-  outline: none;
-}
-
+/* Tip box (blue) with close button */
 .tipBox {
   margin-top: 14px;
   padding: 12px 14px;
@@ -333,6 +353,31 @@ body {
   line-height: 1.4;
 }
 
+.tipBoxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tipText {
+  flex: 1;
+}
+
+.tipClose {
+  border: none;
+  background: transparent;
+  color: rgba(30, 58, 138, 0.8);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.tipClose:hover {
+  color: rgba(30, 58, 138, 1);
+}
+
+/* Groups / labels */
 .fieldGroup {
   margin-top: 16px;
 }
@@ -352,4 +397,173 @@ body {
 .muted {
   color: #6b7280;
   font-weight: 600;
+}
+
+.helperText {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(17, 24, 39, 0.55);
+}
+
+/* Inputs */
+.textInput {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.textInput:focus {
+  border-color: rgba(5, 150, 105, 0.55);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.14);
+}
+
+/* Selects */
+.selectRow {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.selectRow:focus {
+  border-color: rgba(5, 150, 105, 0.55);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.14);
+}
+
+/* Dividers between sections */
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 18px 0 4px;
+}
+
+/* Section headers (Interests / Default Class Visibility) */
+.sectionHeader {
+  margin-top: 2px;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionIcon {
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.sectionTitle {
+  font-weight: 800;
+  color: #111827;
+  font-size: 13px;
+}
+
+.sectionSub {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(17, 24, 39, 0.6);
+  line-height: 1.35;
+}
+
+/* Interests list (scroll box like screenshot) */
+.interestsBox {
+  margin-top: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 10px;
+  max-height: 180px;
+  overflow: auto;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Interests buttons */
+.interestItem {
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+}
+
+.interestItem:hover {
+  background: #f3f4f6;
+}
+
+.interestItem.isSelected {
+  border-color: rgba(5, 150, 105, 0.45);
+  background: rgba(5, 150, 105, 0.10);
+  color: #065f46;
+}
+
+/* Mini groups (Past / Current / Future classes) */
+.miniGroup {
+  margin-top: 12px;
+}
+
+.miniLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(17, 24, 39, 0.85);
+  margin-bottom: 8px;
+}
+
+/* Primary bottom CTA */
+.completeBtn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #047857;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.completeBtn:hover {
+  background: #065f46;
+}
+
+.btnIcon {
+  font-size: 14px;
+}
+
+/* Footer link */
+.switchAuth {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.switchAuth a {
+  color: #039be5;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.switchAuth a:hover {
+  text-decoration: underline;
 }

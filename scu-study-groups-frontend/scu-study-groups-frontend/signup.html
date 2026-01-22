@@ -15,7 +15,7 @@
                     <p class="authText">Sign up with your SCU email to continue</p>
                 </div>
 
-                <form class="authForm">
+                <form id="signupForm" class="authForm">
                     <label class="authLabel" for="email">SCU Email</label>
 
                     <div class="inputRow">
@@ -28,7 +28,33 @@
                         autocomplete="email"
                     />
                     </div>
-                    <button class="signUpBtn" type="submit">Send Sign-Up Link</button>
+                    <label class="authLabel" for="password">Password</label>
+                    <div class="inputRow">
+                    <span class="inputIcon">🔒</span>
+                    <input
+                        class="authInput"
+                        id="password"
+                        type="password"
+                        placeholder="Create a password"
+                        autocomplete="new-password"
+                        required
+                    />
+                    </div>
+                    <label class="authLabel" for="confirmPassword">Confirm Password</label>
+                    <div class="inputRow">
+                    <span class="inputIcon">🔒</span>
+                    <input
+                        class="authInput"
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Confirm password"
+                        autocomplete="new-password"
+                        required
+                    />
+                    </div>
+                    <p class="hintText">Must be at least 6 characters, include one uppercase letter, one symbol, and one number.</p>
+                    <button class="signUpBtn" type="submit">Sign Up</button>
+                    <p class="switchAuth">Already have an account? <a href="signin.html">Sign in</a></p>
                     <p class="smallMsg" id="msg"></p>
                 </form>
                 <div class="privacyBox">
