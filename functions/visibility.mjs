@@ -33,3 +33,15 @@ export async function checkVis(connections, looker, lid, seen, sid, field, group
 
     return false;
 }
+
+export async function visProfile(fields, classes, connections, looker, seen, other, groups) {
+    var out = {};
+    for (const [key, value] of fields) {
+        if (await checkVis(connections, classes, looker, other.get("classes"), seen, other.get(key + "_vis"), groups)) {
+            out.set(key, other.get(key));
+        } else {
+            out.set(key, value);
+        }
+    }
+    return out;
+}

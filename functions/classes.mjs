@@ -4,7 +4,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 
-import { checkVis } from "./visibility.mjs";
+import { checkVis, visProfile } from "./visibility.mjs";
 
 initializeApp();
 const db = getFirestore();
@@ -97,11 +97,12 @@ export const listSection = onCall(async (data, context) => {
     const query = await db.collection("users").where(modifier, "!=", 0).where(new FieldPath('classes', data.quarter), "array-contains", data.class).get();
     const classes = res.get("classes");
     const connections = res.get("connections");
+    const groups = db.collection("groups");
     var out = [];
-    query.forEach(ref => {
+    query.forEach(async ref => {
         const vis = ref.get(modifier);
-        if (vis <= 2 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, db.collection("groups"))) {
-            out.push(ref.id);
+        if (vis <= 2 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, groups)) {
+            out.push(await visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups));
         }
     });
     return out;
@@ -122,11 +123,12 @@ export const listCourse = onCall(async (data, context) => {
     const query = await db.collection("users").where(modifier, "!=", 0).get();
     const classes = res.get("classes");
     const connections = res.get("connections");
+    const groups = db.collection("groups");
     var out = [];
-    query.forEach(ref => {
+    query.forEach(async ref => {
         const vis = ref.get(modifier);
-        if (ref.get("classes").get(data.quarter)?.find(val => val.class == data.class.course) && (vis <= 1 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, db.collection("groups")))) {
-            out.push(ref.id);
+        if (ref.get("classes").get(data.quarter)?.find(val => val.class == data.class.course) && (vis <= 1 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, groups))) {
+            out.push(await visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups));
         }
     });
     return out;

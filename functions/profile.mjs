@@ -42,32 +42,3 @@ export const get = onCall(async (data, context) => {
     out.delete("connections");
     return out;
 });
-
-export const visibleProfile = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
-    }
-    
-    const res = await db.doc("users/" + uid).get();
-    if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-
-    const other = await db.doc("users/" + data.id).get();
-    if (!other.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-    
-    var out = {};
-    const classes = res.get("classes");
-    const connections = res.get("connections");
-    for (const [key, value] of data.fields) {
-        if (checkVis(connections, classes, uid, other.get("classes"), data.id, other.get(key + "_vis"), db.collection("groups"))) {
-            out.set(key, other.get(key));
-        } else {
-            out.set(key, value);
-        }
-    }
-    return out;
-});
