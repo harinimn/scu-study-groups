@@ -1,0 +1,569 @@
+/* Welcome Page */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+    sans-serif;
+
+  background: #f6faf7;
+  color: #111827;
+}
+
+.welcome
+{
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+    padding: 24px;
+}
+
+.heroIcon {
+  width: 56px;
+  height: 56px;
+  background: #16a34a; /* green */
+  border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 28px;
+  color: white;
+
+  margin-bottom: 35px;
+}
+
+.welcome h1
+{
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.subtitle
+{
+    margin-top: 8px;
+    margin-bottom: 32px;
+    color: #6b7280;
+}
+
+.features 
+{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+
+    max-width: 720px;
+    margin-bottom: 40px;
+}
+
+.feature 
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.featureIcon 
+{
+    font-size: 24px;
+    color: #16a34a;
+    margin-bottom: 8px;
+}
+
+.featureTitle 
+{
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.featureText 
+{
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.primaryBtn 
+{
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 999px;
+
+    padding: 12px 28px;
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.primaryBtn:hover 
+{
+    background: #15803d;
+}
+
+.footerNote 
+{
+    margin-top: 50px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+
+/* Sign Up Page */
+.authPage
+{
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: radial-gradient(circle at top, #f1faf4, #ffffff 60%);
+}
+
+.authCard 
+{
+    width: 100%;
+    max-width: 420px;
+
+    background: white;
+    border-radius: 14px;
+    padding: 28px;
+
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.authHeader 
+{
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.authIcon 
+{
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #0f7a3a;
+    color: white;
+    border-radius: 12px;
+    font-size: 22px;
+}
+
+.authTitle 
+{
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.authText
+{
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.authForm {
+    margin-top: 14px;
+}
+
+.authLabel {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #111827;
+    margin: 14px 0 8px;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.inputIcon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.authInput {
+  border: none;
+  outline: none;
+  background: transparent;
+
+  width: 100%;
+  font-size: 14px;
+}
+
+.signUpBtn {
+  width: 100%;
+  margin-top: 16px;
+
+  background: #0f7a3a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.signUpBtn:hover {
+  background: #0b612e;
+}
+
+.privacyBox {
+  margin-top: 14px;
+  padding: 12px 14px;
+
+  border-radius: 10px;
+  background: #eff6ff;              
+  border: 1px solid #bfdbfe;        
+
+  color: #1e3a8a;                  
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Profile Set Up Page */
+/* Page */
+.profilePage {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #f1faf4, #ffffff 60%);
+  padding: 48px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Card */
+.profileCard {
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Header (top icon + title) */
+.authHeader {
+  text-align: center;
+}
+
+.authIconWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.authIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #047857;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.authTitle {
+  font-size: 18px;
+  margin: 6px 0 6px;
+  color: #111827;
+  font-weight: 800;
+}
+
+.authText {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(17, 24, 39, 0.65);
+}
+
+/* Overall visibility green box */
+.visibilityBox {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+
+.visHeader {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.visIcon {
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.visTitle {
+  font-weight: 800;
+  color: #065f46;
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+
+.visDesc {
+  font-size: 12px;
+  color: rgba(6, 95, 70, 0.75);
+  line-height: 1.35;
+}
+
+/* Tip box (blue) with close button */
+.tipBox {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.tipBoxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tipText {
+  flex: 1;
+}
+
+.tipClose {
+  border: none;
+  background: transparent;
+  color: rgba(30, 58, 138, 0.8);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.tipClose:hover {
+  color: rgba(30, 58, 138, 1);
+}
+
+/* Groups / labels */
+.fieldGroup {
+  margin-top: 16px;
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+  margin: 14px 0 8px;
+}
+
+.label.small {
+  margin-top: 10px;
+}
+
+.muted {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.helperText {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(17, 24, 39, 0.55);
+}
+
+/* Inputs */
+.textInput {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.textInput:focus {
+  border-color: rgba(5, 150, 105, 0.55);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.14);
+}
+
+/* Selects */
+.selectRow {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.selectRow:focus {
+  border-color: rgba(5, 150, 105, 0.55);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.14);
+}
+
+/* Dividers between sections */
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 18px 0 4px;
+}
+
+/* Section headers (Interests / Default Class Visibility) */
+.sectionHeader {
+  margin-top: 2px;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionIcon {
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.sectionTitle {
+  font-weight: 800;
+  color: #111827;
+  font-size: 13px;
+}
+
+.sectionSub {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(17, 24, 39, 0.6);
+  line-height: 1.35;
+}
+
+/* Interests list (scroll box like screenshot) */
+.interestsBox {
+  margin-top: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 10px;
+  max-height: 180px;
+  overflow: auto;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Interests buttons */
+.interestItem {
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+}
+
+.interestItem:hover {
+  background: #f3f4f6;
+}
+
+.interestItem.isSelected {
+  border-color: rgba(5, 150, 105, 0.45);
+  background: rgba(5, 150, 105, 0.10);
+  color: #065f46;
+}
+
+/* Mini groups (Past / Current / Future classes) */
+.miniGroup {
+  margin-top: 12px;
+}
+
+.miniLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(17, 24, 39, 0.85);
+  margin-bottom: 8px;
+}
+
+/* Primary bottom CTA */
+.completeBtn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #047857;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.completeBtn:hover {
+  background: #065f46;
+}
+
+.btnIcon {
+  font-size: 14px;
+}
+
+/* Footer link */
+.switchAuth {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.switchAuth a {
+  color: #039be5;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.switchAuth a:hover {
+  text-decoration: underline;
+}
