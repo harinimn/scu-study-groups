@@ -1,4 +1,4 @@
-// Handles methods related the classes screen
+/** Handles methods related the classes screen */
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from 'firebase-admin/app';
@@ -9,6 +9,12 @@ import { checkVis, visProfile } from "./visibility.mjs";
 initializeApp();
 const db = getFirestore();
 
+/** Lists the user's classes
+ * @param {any} quarter the quarter to list classes in, see @function setup
+ * @throws {HttpsError<not-found>} if current user does not exist
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ * @returns {Array<Map<string, any>>} array containing the classes, see @function setup
+ */
 export const getClasses = onCall(async (data, context) => {
     const uid = context.auth.uid;
     if (!uid) {
@@ -28,7 +34,12 @@ export const getClasses = onCall(async (data, context) => {
     return classes;
 });
   
-  
+/** Adds a class to the user
+ * @param {any} quarter the quarter to list classes in, see @function setup
+ * @param {Array<Map<string, any>>} class the class to add, see @function setup
+ * @throws {HttpsError<not-found>} if current user does not exist
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ */
 export const addClass = onCall(async (data, context) => {
     const uid = context.auth.uid;
     if (!uid) {
@@ -42,13 +53,13 @@ export const addClass = onCall(async (data, context) => {
     }
     
     var classes = doc.get("classes");
-    if (classes == undefined) {
+    if (classes === undefined) {
         ins = {classes: {}};
         ins.classes.set(data.quarter, [data.class]);
         await ref.set(ins);
     } else {
         var period = classes.get(data.quarter);
-        if (period == undefined) {
+        if (period === undefined) {
             classes.set(data.quarter, [data.class]);
         } else {
             period.push(data.class);
@@ -56,7 +67,13 @@ export const addClass = onCall(async (data, context) => {
         await ref.set({classes: classes});
     }
 });
-  
+
+/** Removes one of the user's classes
+ * @param {any} quarter the quarter to list classes in, see @function setup
+ * @param {number} class the index of the class to remove, per @function getClasses
+ * @throws {HttpsError<not-found>} if current user does not exist
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ */
 export const delClass = onCall(async (data, context) => {
     const uid = context.auth.uid;
     if (!uid) {
@@ -70,18 +87,24 @@ export const delClass = onCall(async (data, context) => {
     }
         
     var classes = res.get("classes");
-    if (classes != undefined) {
+    if (classes !== undefined) {
         var period = classes.get(data.quarter);
-        if (period != undefined) {
-            var loc = period.indexOf(data.class);
-            if (loc != -1) {
-                period.splice(loc, 1);
-                await ref.set({classes: classes});
-            }
+        if (period !== undefined) {
+            period.splice(data.class, 1);
+            await ref.set({classes: classes});
         }
     }
 });
 
+/** Shows the usesrs in the same section of a class
+ * @param {any} quarter the quarter to list classes in, see @function setup
+ * @param {any} cur the current quarter to determine time based off of, see @function setup
+ * @param {Array<Map<string, any>>} class the class to see users from, see @function setup
+ * @param {Map<string, any>} fields map of profile fields with key for the field and value for default, see @function visProfile
+ * @throws {HttpsError<not-found>} if current user does not exist
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
+ */
 export const listSection = onCall(async (data, context) => {
     const uid = context.auth.uid;
     if (!uid) {
@@ -102,12 +125,21 @@ export const listSection = onCall(async (data, context) => {
     query.forEach(async ref => {
         const vis = ref.get(modifier);
         if (vis <= 2 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, groups)) {
-            out.push(await visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups));
+            out.push(visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups));
         }
     });
     return out;
 });
 
+/** Shows the usesrs in a different section of the same class
+ * @param {any} quarter the quarter to list classes in, see @function setup
+ * @param {any} cur the current quarter to determine time based off of, see @function setup
+ * @param {Array<Map<string, any>>} class the class to see users from, see @function setup
+ * @param {Map<string, any>} fields map of profile fields with key for the field and value for default, see @function visProfile
+ * @throws {HttpsError<not-found>} if current user does not exist
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
+ */
 export const listCourse = onCall(async (data, context) => {
     const uid = context.auth.uid;
     if (!uid) {
@@ -127,8 +159,8 @@ export const listCourse = onCall(async (data, context) => {
     var out = [];
     query.forEach(async ref => {
         const vis = ref.get(modifier);
-        if (ref.get("classes").get(data.quarter)?.find(val => val.class == data.class.course) && (vis <= 1 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, groups))) {
-            out.push(await visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups));
+        if (ref.get("classes").get(data.quarter)?.find(val => val != data.class && val.class == data.class.course) && (vis <= 1 || checkVis(connections, classes, uid, ref.get("classes"), ref.id, vis, groups))) {
+            out.push(visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups));
         }
     });
     return out;
