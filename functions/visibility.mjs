@@ -42,7 +42,7 @@ export async function checkVis(connections, looker, lid, seen, sid, field, group
     for (const [quarter, classes] of seen) {
         potential = looker.get(quarter);
         for (c in classes) {
-            if (potential.contains(c)) {
+            if (potential.find(val => val.course == c.course && val.section == c.section)) {
                 return true;
             }
             if (field == 1 && potential.find(val => val.course == c.course)) {

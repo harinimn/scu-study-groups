@@ -15,7 +15,7 @@ const db = getFirestore();
  * @param {number} future_classes_vis the visibility setting for future classes, same format as @param def_vis
  * @param {Array} interests an array containing the user's interests, have to comply with ==
  * @param {string} main the main SCU email address for the user
- * @param {Map<any, Array<Map<string, any>>>} classes a map keyed by quarters, which have to hold <, ==, and > for earlier, same, and newer; with array values containing a map of course (the overall course) and section (specific section)
+ * @param {Map<any, Array<Map<string, any>>>} classes a map keyed by quarters, which have to hold <, ==, and > for earlier, same, and newer; with array values containing a map of course, section, and vis
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const setup = onCall(async (data, context) => {
