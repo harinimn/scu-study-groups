@@ -32,7 +32,7 @@ export async function checkVis(connections, looker, lid, seen, sid, field, group
         return false;
     }
 
-    const found = await groups.where("members", "contains", sid).where("members", "contains", lid).limit(1).get();
+    const found = await groups.where("count", "!=", 1).where("members", "array-contains", sid).where("members", "array-contains", lid).limit(1).get();
     if (!found.empty) {
         return true;
     } if (field == 3) {

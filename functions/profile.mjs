@@ -13,8 +13,8 @@ const db = getFirestore();
  * @param {number} past_classes_vis the visibility setting for past classes, same format as @param def_vis
  * @param {number} cur_classes_vis the visibility setting for current classes, same format as @param def_vis
  * @param {number} future_classes_vis the visibility setting for future classes, same format as @param def_vis
- * @param {Array} interests an array containing the user's interests, have to comply with ==
- * @param {string} main the main SCU email address for the user
+ * @param {Array<any>} interests an array containing the user's interests, have to comply with ==
+ * @param {number} gender the user's gender, with 0 for male
  * @param {Map<any, Array<Map<string, any>>>} classes a map keyed by quarters, which have to hold <, ==, and > for earlier, same, and newer; with array values containing a map of course, section, and vis
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
@@ -30,6 +30,7 @@ export const setup = onCall(async (data, context) => {
             data.set(key, def);
         }
     }
+    data.set("classes", {});
 
     await db.doc("users/" + uid).set(data);
 });
