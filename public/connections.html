@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connections • SCU Study Groups</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="connections.css" />
+  </head>
+
+  <body>
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbarLeft">
+        <a class="backBtn" href="dashboard.html" aria-label="Back to dashboard">←</a>
+        <div class="brandIcon">👥</div>
+        <div>
+          <div class="brandTitle">Connections</div>
+          <div class="brandSub">Manage your network</div>
+        </div>
+      </div>
+
+      <div class="topbarRight">
+        <div class="avatar">AN</div>
+      </div>
+    </header>
+
+    <main class="connPage">
+      <div class="connWrap">
+        <!-- LEFT: Send request -->
+        <aside class="connLeft">
+          <section class="card">
+            <div class="cardHeader">
+              <div class="cardTitleRow">
+                <span class="miniIcon">✈️</span>
+                <div class="cardTitle">Send Connection Request</div>
+              </div>
+              <div class="cardSub">Connect with classmates via email</div>
+            </div>
+
+            <label class="label small" for="emailInput">SCU Email Address</label>
+            <div class="inputWithIcon">
+              <span class="inputIcon">✉️</span>
+              <input
+                id="emailInput"
+                class="textInput"
+                type="email"
+                placeholder="student@scu.edu"
+                autocomplete="off"
+              />
+            </div>
+
+            <button class="primaryBtn" id="sendRequestBtn" type="button">
+              <span class="btnIcon">👤</span>
+              Send Request
+            </button>
+
+            <div class="helperText">
+              An email will be sent prompting them to create an account if they don't have one.
+            </div>
+          </section>
+        </aside>
+
+        <!-- RIGHT: Tabs + content -->
+        <section class="connRight">
+          <section class="card">
+            <!-- segmented tabs -->
+            <div class="segmented" role="tablist" aria-label="Connections tabs">
+              <button class="segBtn isActive" data-tab="connections" type="button">
+                My Connections <span class="pillCount" id="countConnections">3</span>
+              </button>
+              <button class="segBtn" data-tab="requests" type="button">
+                Requests <span class="pillCount" id="countRequests">3</span>
+              </button>
+              <button class="segBtn" data-tab="discover" type="button">
+                Discover
+              </button>
+            </div>
+
+            <!-- TAB: My Connections -->
+            <div class="tabPanel isActive" id="tab-connections">
+              <div class="panelHeader">
+                <div class="panelTitle">My Connections</div>
+                <div class="panelSub">People you're connected with</div>
+              </div>
+
+              <div class="list" id="connectionsList">
+              </div>
+            </div>
+
+            <!-- TAB: Requests -->
+            <div class="tabPanel" id="tab-requests">
+              <div class="panelHeader">
+                <div class="panelTitle">Connection Requests</div>
+                <div class="panelSub">Manage incoming and outgoing requests</div>
+              </div>
+
+              <div class="sectionLabel">
+                <span class="labelIcon">✓</span>
+                Incoming Requests <span class="muted" id="incomingCount">(2)</span>
+              </div>
+
+              <div class="list" id="incomingList"></div>
+
+              <div class="divider"></div>
+
+              <div class="sectionLabel">
+                <span class="labelIcon">↗</span>
+                Outgoing Requests <span class="muted" id="outgoingCount">(1)</span>
+              </div>
+
+              <div class="list" id="outgoingList"></div>
+            </div>
+
+            <!-- TAB: Discover -->
+            <div class="tabPanel" id="tab-discover">
+              <div class="panelHeader">
+                <div class="panelTitle">Discover Classmates</div>
+                <div class="panelSub">Find people with common courses and connections</div>
+              </div>
+
+              <div class="list" id="discoverList"></div>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+
+    <script src="connections.js"></script>
+  </body>
+</html>

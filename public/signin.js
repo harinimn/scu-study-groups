@@ -65,7 +65,7 @@ form.addEventListener("submit", async (e) => {
     }
 
     setMsg("Signed in! Redirecting...");
-    window.location.href = "profile-setup.html";
+    window.location.href = "dashboard.html";
   } catch (err) {
     console.error(err);
     setMsg(mapSigninError(err?.code), true);
