@@ -1516,3 +1516,396 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Connections layout tweaks: single column */
+.connWrap.oneCol {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: block;
+}
+
+.connTop {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.connSearch {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 8px 10px;
+  min-width: 420px;
+}
+
+.searchIcon {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.connSearch .textInput {
+  border: none;
+  outline: none;
+  padding: 0;
+  width: 100%;
+  background: transparent;
+}
+
+@media (max-width: 760px) {
+  .connTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .connSearch {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+
+/* courses page */
+.coursesPage {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 24px;
+}
+
+.coursesWrap {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.quarterCard {
+  display: grid;
+  grid-template-columns: 160px 1fr 160px;
+  align-items: center;
+  padding: 14px;
+}
+
+.quarterCenter {
+  text-align: center;
+}
+
+.quarterTitle {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.quarterSub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(17, 24, 39, 0.55);
+}
+
+.ghostBtn {
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ghostBtn:hover { background: #f3f4f6; }
+
+.bigAddBtn {
+  width: 100%;
+  border: none;
+  background: #047857;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.bigAddBtn:hover { background: #065f46; }
+
+.courseList {
+  display: grid;
+  gap: 10px;
+}
+
+.courseRow {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.courseHeader {
+  width: 100%;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.courseHeader:hover { background: #f8fafc; }
+
+.courseHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coursePill {
+  font-size: 10px;
+  font-weight: 900;
+  color: #065f46;
+  background: rgba(5,150,105,0.12);
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.courseHeaderText .courseName {
+  font-size: 12px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.courseHeaderText .courseMeta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(17,24,39,0.55);
+}
+
+.courseHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.studentPill {
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(15,23,42,0.06);
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: rgba(17,24,39,0.75);
+}
+
+.chev {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.courseBody {
+  display: none;
+  padding: 12px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+}
+
+.courseRow.isOpen .courseBody { display: block; }
+
+.visRow {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 12px;
+  align-items: center;
+  background: rgba(15,23,42,0.03);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.visLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eyeIcon { opacity: 0.75; }
+
+.visTitle {
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.selectInput {
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: #fff;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.subBlock {
+  margin-top: 14px;
+}
+
+.subTitle {
+  font-size: 12px;
+  font-weight: 900;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.studentList {
+  display: grid;
+  gap: 10px;
+}
+
+.studentList.faint .studentCard {
+  background: #fafafa;
+}
+
+.studentCard {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 10px 10px;
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+}
+
+.avatarCircle.small {
+  width: 28px;
+  height: 28px;
+  font-size: 10px;
+}
+
+.studentTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.studentName {
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.studentBadges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tinyPill {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(5,150,105,0.12);
+  color: #065f46;
+}
+
+.tinyPill.gray {
+  background: rgba(15,23,42,0.06);
+  color: rgba(17,24,39,0.7);
+}
+
+.studentMeta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(17,24,39,0.6);
+}
+
+.studentEmail {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(17,24,39,0.45);
+}
+
+.studentActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconBtn.green {
+  border-color: rgba(5,150,105,0.25);
+}
+.iconBtn.green:hover {
+  background: rgba(5,150,105,0.10);
+}
+
+.dangerLinkBtn {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(239,68,68,0.06);
+  color: #b91c1c;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.dangerLinkBtn:hover {
+  background: rgba(239,68,68,0.10);
+}
+
+/* Modal */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 50;
+}
+
+.modalBackdrop.isOpen { display: flex; }
+
+.modalCard {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.20);
+  overflow: hidden;
+}
+
+.modalHeader {
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modalTitle { font-weight: 900; font-size: 14px; }
+.modalSub { margin-top: 4px; font-size: 12px; color: rgba(17,24,39,0.55); }
+
+.modalBody { padding: 14px; }
+
+.modalFooter {
+  padding: 14px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .quarterCard { grid-template-columns: 1fr; gap: 10px; text-align: center; }
+  .visRow { grid-template-columns: 1fr; }
+}

@@ -6,6 +6,8 @@
     <title>Set Up Profile • SCU Study Groups</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="profile-setup.js"></script>
 
   <body>
     <main class="profilePage">
@@ -257,19 +259,22 @@
           </div>
 
           <!-- Bottom CTA -->
-          <button class="completeBtn" type="button">
+          <button class="completeBtn" id="completeSetupBtn" type="button">
             <span class="btnIcon">🧾</span>
             Complete Setup
           </button>
+
         </div>
       </div>
     </main>
 
-    <!-- Tiny optional UX: dismiss privacy tip (safe even if you don’t keep it) -->
     <script>
       const tip = document.getElementById("privacyTip");
       const closeBtn = document.querySelector(".tipClose");
       if (tip && closeBtn) closeBtn.addEventListener("click", () => (tip.style.display = "none"));
     </script>
+
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="profile-setup.js"></script>
   </body>
 </html>

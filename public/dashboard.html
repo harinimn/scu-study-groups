@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard • SCU Study Groups</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="dashboard.css" />
   </head>
 
   <body>
@@ -20,7 +19,7 @@
       </div>
 
       <div class="topbarRight">
-        <div class="avatar" aria-label="Profile">AN</div>
+        <a class="avatar" href="profile-setup.html" aria-label="Edit profile">AN</a>
       </div>
     </header>
 
@@ -33,7 +32,7 @@
           </div>
 
           <div class="quickLinks">
-            <a class="quickLink" href="study-groups.html">
+            <a class="quickLink" href="study-preferences.html">
               <span class="qlIcon">👥</span>
               <span class="qlText">Study Groups</span>
             </a>
@@ -82,6 +81,8 @@
       </div>
     </main>
 
-    <script src="dashboard.js"></script>
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="dashboard.js"></script>
+
   </body>
 </html>

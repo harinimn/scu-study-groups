@@ -1,3 +1,6 @@
+import { auth, functions } from "./firebase.js";
+
+
 const acc = document.getElementById("classesAccordion");
 if (!acc) throw new Error("Accordion not found");
 

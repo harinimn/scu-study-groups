@@ -1,3 +1,10 @@
+import { auth } from "./firebase.js";
+
+auth.onAuthStateChanged(user => {
+  console.log("Logged in as:", user.email);
+});
+
+
 const suggested = [
   {
     course: "CSCI 61",
