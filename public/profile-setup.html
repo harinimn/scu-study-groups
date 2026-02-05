@@ -6,6 +6,8 @@
     <title>Set Up Profile • SCU Study Groups</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="profile-setup.js"></script>
 
   <body>
     <main class="profilePage">
@@ -276,10 +278,12 @@
             </div>
           </div>
 
-          <button class="completeBtn" type="button">
+          <!-- Bottom CTA -->
+          <button class="completeBtn" id="completeSetupBtn" type="button">
             <span class="btnIcon">🧾</span>
             Complete Setup
           </button>
+
         </div>
       </div>
     </main>
@@ -322,5 +326,8 @@
           });
         }
     </script>
+
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="profile-setup.js"></script>
   </body>
 </html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connections • SCU Study Groups</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="topbarLeft">
+        <a class="backBtn" href="dashboard.html" aria-label="Back to dashboard">←</a>
+        <div class="brandIcon">👥</div>
+        <div>
+          <div class="brandTitle">Connections</div>
+          <div class="brandSub">Manage your network</div>
+        </div>
+      </div>
+      <div class="topbarRight">
+        <div class="avatar">AN</div>
+      </div>
+    </header>
+
+    <main class="connPage">
+      <div class="connWrap oneCol">
+        <section class="card">
+          <!-- Search bar (in-app) -->
+          <div class="connTop">
+            <div>
+              <div class="cardTitle">Find people</div>
+              <div class="cardSub">Search classmates and send requests inside the app</div>
+            </div>
+
+            <div class="connSearch">
+              <span class="searchIcon">🔎</span>
+              <input
+                id="searchInput"
+                class="textInput"
+                type="text"
+                placeholder="Search by name, major, email, or course..."
+                autocomplete="off"
+              />
+              <button id="clearSearchBtn" class="smallBtn ghost" type="button">Clear</button>
+            </div>
+          </div>
+
+          <!-- segmented tabs -->
+          <div class="segmented" role="tablist" aria-label="Connections tabs">
+            <button class="segBtn isActive" data-tab="connections" type="button">
+              My Connections <span class="pillCount" id="countConnections">0</span>
+            </button>
+            <button class="segBtn" data-tab="requests" type="button">
+              Requests <span class="pillCount" id="countRequests">0</span>
+            </button>
+            <button class="segBtn" data-tab="discover" type="button">
+              Discover
+            </button>
+          </div>
+
+          <!-- TAB: My Connections -->
+          <div class="tabPanel isActive" id="tab-connections">
+            <div class="panelHeader">
+              <div class="panelTitle">My Connections</div>
+              <div class="panelSub">People you're connected with</div>
+            </div>
+
+            <div class="list" id="connectionsList"></div>
+          </div>
+
+          <!-- TAB: Requests -->
+          <div class="tabPanel" id="tab-requests">
+            <div class="panelHeader">
+              <div class="panelTitle">Connection Requests</div>
+              <div class="panelSub">Manage incoming and outgoing requests</div>
+            </div>
+
+            <div class="sectionLabel">
+              <span class="labelIcon">✓</span>
+              Incoming Requests <span class="muted" id="incomingCount">(0)</span>
+            </div>
+
+            <div class="list" id="incomingList"></div>
+
+            <div class="divider"></div>
+
+            <div class="sectionLabel">
+              <span class="labelIcon">↗</span>
+              Outgoing Requests <span class="muted" id="outgoingCount">(0)</span>
+            </div>
+
+            <div class="list" id="outgoingList"></div>
+          </div>
+
+          <!-- TAB: Discover -->
+          <div class="tabPanel" id="tab-discover">
+            <div class="panelHeader">
+              <div class="panelTitle">Discover Classmates</div>
+              <div class="panelSub">People you may know</div>
+            </div>
+
+            <div class="list" id="discoverList"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="connections.js"></script>
+  </body>
+</html>

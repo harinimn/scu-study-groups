@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard • SCU Study Groups</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbarLeft">
+        <div class="brandIcon">👥</div>
+        <div>
+          <div class="brandTitle">SCU Study Groups</div>
+          <div class="brandSub">Welcome back, <span id="displayName">Anonymous</span></div>
+        </div>
+      </div>
+
+      <div class="topbarRight">
+        <a class="avatar" href="profile-setup.html" aria-label="Edit profile">AN</a>
+      </div>
+    </header>
+
+    <main class="dashPage">
+      <div class="dashWrap">
+        <!-- Quick Links -->
+        <section class="card">
+          <div class="cardHeader">
+            <div class="cardTitle">Quick Links</div>
+          </div>
+
+          <div class="quickLinks">
+            <a class="quickLink" href="study-preferences.html">
+              <span class="qlIcon">👥</span>
+              <span class="qlText">Study Groups</span>
+            </a>
+
+            <a class="quickLink" href="connections.html">
+              <span class="qlIcon">🔗</span>
+              <span class="qlText">Connections</span>
+            </a>
+
+            <a class="quickLink" href="courses.html">
+              <span class="qlIcon">📚</span>
+              <span class="qlText">My Courses</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- Suggested Study Groups -->
+        <section class="card">
+          <div class="cardHeader">
+            <div>
+              <div class="cardTitleRow">
+                <div class="cardTitle">Suggested Study Groups</div>
+                <span class="badge" id="suggestCount">0</span>
+              </div>
+              <div class="cardSub">Auto-generated groups based on your schedule and preferences</div>
+            </div>
+          </div>
+
+          <div class="stack" id="suggestedList"></div>
+        </section>
+
+        <!-- My Study Groups -->
+        <section class="card">
+          <div class="cardHeader">
+            <div>
+              <div class="cardTitleRow">
+                <div class="cardTitle">My Study Groups</div>
+                <span class="badge" id="myCount">0</span>
+              </div>
+              <div class="cardSub">Groups you’re currently in</div>
+            </div>
+          </div>
+
+          <div class="myGroups" id="myGroupsList"></div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="dashboard.js"></script>
+
+  </body>
+</html>
