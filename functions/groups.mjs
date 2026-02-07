@@ -18,9 +18,10 @@ const db = getFirestore();
  * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const set = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid)  throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+export const set = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth)  throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+    const uid = request.auth.uid;
     
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -32,7 +33,7 @@ export const set = onCall(async (data, context) => {
                     [`classes.${data.quarter}.${data.class}.gender`]: data.gender});
     
     const groups = db.collection("groups");
-    var found = groups.where("quarter", "==", data.quarter).where("course", "==", period[data.class].course);
+    var found = groups.where("quarter", "==", data.quarter).where("course", "==", period[data.class].course).where("gender", "==", !!data.gender);
     const inside = await found.where("members", "array-contains", uid).get();
     var num = inside.size;
     inside.forEach(ref => num -= Number(ref.get("size") == 1));
@@ -47,8 +48,6 @@ export const set = onCall(async (data, context) => {
     found = found.where(documentId(), "not-in", exclude);
 
     if (data.section) found = found.where("section", "==", period[data.class].section);
-    if (data.gender) found = found.where("gender", "==", true);
-    else if (res.get("gender") == 0) found = found.where("gender", "==", false);
     found = await found.where("time", "in", data.times).get();
 
     if (found.size > 1) {
@@ -90,9 +89,10 @@ export const set = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} all the groups, with an id field, time field (see @function set ), and a members field containing results of @function visProfile
  */
-export const get = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid)  throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+export const get = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth)  throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+    const uid = request.auth.uid;
     
     const res = await db.doc("users/" + uid).get();
     if (!res.exists)  throw new HttpsError('not-found', 'This user doesn\'t have any data.');
@@ -118,8 +118,9 @@ export const get = onCall(async (data, context) => {
  * @param {number} group the id of the group to leave
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const leave = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid)  throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+export const leave = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth)  throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+    const uid = request.auth.uid;
     await db.doc("groups/" + data.group).update({members: FieldValue.arrayRemove(uid)});
 });

@@ -13,11 +13,12 @@ const db = getFirestore();
  * @param {string} email the email of the person to send a request to
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const send = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const send = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     var id = data.id;
     if (id === undefined) {
@@ -35,11 +36,12 @@ export const send = onCall(async (data, context) => {
  * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const accept = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const accept = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -58,11 +60,13 @@ export const accept = onCall(async (data, context) => {
  * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const deny = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const deny = onCall(async (request) => {
+    const data = request.data;
+    const auth = request.auth;
+    if (!auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -81,11 +85,12 @@ export const deny = onCall(async (data, context) => {
  * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const withdraw = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const withdraw = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -104,11 +109,12 @@ export const withdraw = onCall(async (data, context) => {
  * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const del = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const del = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -127,11 +133,12 @@ export const del = onCall(async (data, context) => {
  * @throws {HttpsError<not-found>} if one of the users does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const list = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const list = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -160,11 +167,12 @@ export const list = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
  */
-export const pending = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const pending = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -193,11 +201,12 @@ export const pending = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
  */
-export const outgoing = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const outgoing = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -226,11 +235,12 @@ export const outgoing = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile , with an additional "common" field in each storing the number of common connections
  */
-export const common = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const common = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -260,11 +270,12 @@ export const common = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile , with an additional "common" field in each storing the number of common interests
  */
-export const interests = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const interests = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {

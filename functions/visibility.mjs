@@ -85,11 +85,12 @@ export async function visProfile(fields, classes, connections, looker, seen, oth
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Map<string, any>} the visible profiles, see @function visProfile
  */
-export const profile = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const profile = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
