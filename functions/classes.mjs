@@ -15,11 +15,12 @@ const db = getFirestore();
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} array containing the classes, see @function add , @function setVis , and @function groups-set
  */
-export const get = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const get = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
     
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -41,11 +42,12 @@ export const get = onCall(async (data, context) => {
  * @param {Array<Map<string, any>>} class the class to add, see @function setup
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const add = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const add = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
     
     data.class.set("vis", 0);
     data.class.set("slots", 0);
@@ -60,11 +62,12 @@ export const add = onCall(async (data, context) => {
  * @param {number} class the index of the class to remove, per @function get
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const del = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const del = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     await db.doc("users/" + uid).update({[`classes.${data.quarter}`]: FieldValue.arrayRemove(data.class)});
 });
@@ -75,11 +78,12 @@ export const del = onCall(async (data, context) => {
  * @param {number} vis the new visibility of the class
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const setVis = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const setVis = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
         
     await db.doc("users/" + uid).update({[`classes.${data.quarter}.vis`]: data.vis})
 });
@@ -93,11 +97,12 @@ export const setVis = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
  */
-export const listSection = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const listSection = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -130,11 +135,12 @@ export const listSection = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
  */
-export const listCourse = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const listCourse = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {

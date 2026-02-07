@@ -3,6 +3,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import {logger} from 'firebase-functions';
 
 initializeApp();
 const db = getFirestore();
@@ -18,19 +19,25 @@ const db = getFirestore();
  * @param {Map<any, Array<Map<string, any>>>} classes a map keyed by quarters, which have to hold <, ==, and > for earlier, same, and newer; with array values containing a map of course, section, and vis
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const setup = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const setup = onCall(async (request) => {
+    var data = request.data;
+    logger.debug(request.auth);
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const def = data.def_vis;
-    for (const [key, value] of data) {
+    for (const [key, value] of Object.entries(data)) {
         if (key.endsWith("_vis") && key != "def_vis" && value < def) {
-            data.set(key, def);
+            data[key] = def;
         }
     }
-    data.set("classes", {});
+    data.main = request.auth.token.email;
+    data.classes = {};
+    data.pending = [];
+    data.outgoing = [];
+    data.connections = [];
 
     await db.doc("users/" + uid).set(data);
 });
@@ -40,11 +47,12 @@ export const setup = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Map<string, any>} the information used for the main settings page
  */
-export const get = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const get = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
