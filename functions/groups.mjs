@@ -33,7 +33,7 @@ export const set = onCall(async (request) => {
                     [`classes.${data.quarter}.${data.class}.gender`]: data.gender});
     
     const groups = db.collection("groups");
-    var found = groups.where("quarter", "==", data.quarter).where("course", "==", period[data.class].course);
+    var found = groups.where("quarter", "==", data.quarter).where("course", "==", period[data.class].course).where("gender", "==", !!data.gender);
     const inside = await found.where("members", "array-contains", uid).get();
     var num = inside.size;
     inside.forEach(ref => num -= Number(ref.get("size") == 1));
@@ -48,8 +48,6 @@ export const set = onCall(async (request) => {
     found = found.where(documentId(), "not-in", exclude);
 
     if (data.section) found = found.where("section", "==", period[data.class].section);
-    if (data.gender) found = found.where("gender", "==", true);
-    else if (res.get("gender") == 0) found = found.where("gender", "==", false);
     found = await found.where("time", "in", data.times).get();
 
     if (found.size > 1) {
