@@ -33,11 +33,15 @@ export const setup = onCall(async (request) => {
             data[key] = def;
         }
     }
-    data.main = request.auth.token.email;
-    data.classes = {};
-    data.pending = [];
-    data.outgoing = [];
-    data.connections = [];
+    if (!db.exists("users/" + uid)) {
+        if (!("email" in data)) {
+            data.email = request.auth.token.email;
+        }
+        data.classes = {};
+        data.pending = [];
+        data.outgoing = [];
+        data.connections = [];
+    }
 
     await db.doc("users/" + uid).set(data);
 });

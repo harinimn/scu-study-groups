@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "scu-study-groups"
+  },
+  "targets": {},
+  "etags": {
+    "scu-study-groups": {
+      "extensionInstances": {
+        "firestore-send-email": "1e07e78e13fc346f86f3ff18fde7dfb6fec17d762af747c46c8f6381b5c16986"
+      }
+    }
   }
 }

@@ -12,6 +12,7 @@ const db = getFirestore();
  * @param {number} index the uid of the person to send a request to
  * @param {string} email the email of the person to send a request to
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ * @throws {HttpsError<not-found>} if target user doesn't exist
  */
 export const send = onCall(async (request) => {
     const data = request.data;
@@ -23,12 +24,19 @@ export const send = onCall(async (request) => {
     var id = data.id;
     if (id === undefined) {
         const query = await db.collection("users").where("main", "==", data.email).limit(1).get();
+        if (query.empty) {
+            throw new HttpsError('not-found', 'The target user doesn\' exist.');
+        }
         id = query.docs[0].id;
     }
 
     await db.doc("users/" + data.id).update({pending: FieldValue.arrayUnion(uid)});
     await db.doc("users/" + uid).update({outgoing: arrayUnion(data.id)});
-    //TODO send an email notification
+    await db.doc("email/connection_request").update({toUids: [id], delivery: FieldValue.delete(), message:
+        {
+        subject: 'New connection request!',
+        text: 'You have recieved a new connection request.'
+    }});
 });
 
 /** Accepts an incoming connection request
@@ -52,7 +60,11 @@ export const accept = onCall(async (request) => {
     var pend = res.get("pending");
     await ref.update({pending: FieldValue.arrayRemove(pend[data.index]), connections: FieldValue.arrayUnion(pend[data.index])});
     await db.doc("users/" + pend[data.index]).update({pending: FieldValue.arrayRemove(uid), connections: FieldValue.arrayUnion(uid)});
-    //TODO send an email notification
+    await db.doc("email/connection_request").update({toUids: [pend[data.index]], delivery: FieldValue.delete(), message:
+        {
+        subject: 'Accepted connection!',
+        text: 'One of your connection requests has been approved.'
+    }});
 });
 
 /** Denys an incoming connection request
@@ -77,7 +89,6 @@ export const deny = onCall(async (request) => {
     var pend = res.get("pending");
     await ref.update({pending: FieldValue.arrayRemove(pend[data.index])});
     await db.doc("users/" + pend[data.index]).update({outgoing: FieldValue.arrayRemove(uid)});
-    //TODO send an email notification
 });
 
 /** Withdraws an outgoing connection request
@@ -101,7 +112,6 @@ export const withdraw = onCall(async (request) => {
     var out = res.get("outgoing");
     await ref.update({outgoing: FieldValue.arrayRemove(out[data.index])});
     await db.doc("users/" + out[data.index]).update({pending: FieldValue.arrayRemove(uid)});
-    //TODO send an email notification
 });
 
 /** Deletes a connection
@@ -125,7 +135,6 @@ export const del = onCall(async (request) => {
     var con = res.get("connections");
     await ref.update({connections: FieldValue.arrayRemove(con[data.index])});
     await db.doc("users/" + con[data.index]).update({connections: FieldValue.arrayRemove(uid)});
-    //TODO send an email notification
 });
 
 /** Lists connections
