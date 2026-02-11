@@ -1,11 +1,11 @@
 /** Handles everything related to visibility */
 
-// import { onCall, HttpsError } from "firebase-functions/v2/https";
-// import { initializeApp } from 'firebase-admin/app';
-// import { getFirestore } from 'firebase-admin/firestore';
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
-// initializeApp();
-// const db = getFirestore();
+initializeApp();
+const db = getFirestore();
 
 /**
  * Checks whether a user can see a specific field of another one
@@ -32,7 +32,7 @@ export async function checkVis(connections, looker, lid, seen, sid, field, group
         return false;
     }
 
-    const found = await groups.where("members", "contains", sid).where("members", "contains", lid).limit(1).get();
+    const found = await groups.where("count", "!=", 1).where("members", "array-contains", sid).where("members", "array-contains", lid).limit(1).get();
     if (!found.empty) {
         return true;
     } if (field == 3) {
@@ -42,7 +42,7 @@ export async function checkVis(connections, looker, lid, seen, sid, field, group
     for (const [quarter, classes] of seen) {
         potential = looker.get(quarter);
         for (c in classes) {
-            if (potential.contains(c)) {
+            if (potential.find(val => val.course == c.course && val.section == c.section)) {
                 return true;
             }
             if (field == 1 && potential.find(val => val.course == c.course)) {
@@ -77,24 +77,33 @@ export async function visProfile(fields, classes, connections, looker, seen, oth
     return out;
 }
 
-// export const profile = onCall(async (data, context) => {
-//     const uid = context.auth.uid;
-//     if (!uid) {
-//         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
-//     }
+/**
+ * Returns the visiblie profile of someone from the current user's perspective
+ * @param {Map<string, any>} fields map of profile fields with key for the field and value for default, see @function visProfile
+ * @param {number} id the id of the user beeing seen
+ * @throws {HttpsError<not-found>} if one of the users does not exist
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ * @returns {Map<string, any>} the visible profiles, see @function visProfile
+ */
+export const profile = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+    }
+    const uid = request.auth.uid;
 
-//     const res = await db.doc("users/" + uid).get();
-//     if (!res.exists) {
-//         throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-//     }
+    const res = await db.doc("users/" + uid).get();
+    if (!res.exists) {
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+    }
 
-//     const ref = await db.doc("users/" + data.id).get();
-//     if (!ref.exists) {
-//         throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-//     }
+    const ref = await db.doc("users/" + data.id).get();
+    if (!ref.exists) {
+        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+    }
 
-//     const classes = res.get("classes");
-//     const connections = res.get("connections");
-//     const groups = db.collection("groups");
-//     return await visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups);
-// });
+    const classes = res.get("classes");
+    const connections = res.get("connections");
+    const groups = db.collection("groups");
+    return visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups);
+});

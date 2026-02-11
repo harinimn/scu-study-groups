@@ -2,7 +2,7 @@
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
 initializeApp();
 const db = getFirestore();
@@ -11,14 +11,14 @@ const db = getFirestore();
  * Only one of the params should be provided, with index taking priority
  * @param {number} index the uid of the person to send a request to
  * @param {string} email the email of the person to send a request to
- * @throws {HttpsError<not-found>} if one of the users does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const sendConnection = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const send = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     var id = data.id;
     if (id === undefined) {
@@ -26,38 +26,22 @@ export const sendConnection = onCall(async (data, context) => {
         id = query.docs[0].id;
     }
 
-    const ref = db.doc("users/" + data.id);
-    const res = await ref.get();
-    if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-
-    var pend = res.get("pending");
-    pend.push(uid);
-    ref.set({pending: pend});
-
-    const sref = db.doc("users/" + uid);
-    const sres = await sref.get();
-    if (!sres.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-
-    var out = sres.get("outgoing");
-    out.push(uid);
-    sref.set({outgoing: data.id});
+    await db.doc("users/" + data.id).update({pending: FieldValue.arrayUnion(uid)});
+    await db.doc("users/" + uid).update({outgoing: arrayUnion(data.id)});
     //TODO send an email notification
 });
 
 /** Accepts an incoming connection request
- * @param {number} index the index of the connection request to accept (per @function listPending )
- * @throws {HttpsError<not-found>} if one of the users does not exist
+ * @param {number} index the index of the connection request to accept (per @function pending )
+ * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const acceptConnection = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const accept = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -66,33 +50,23 @@ export const acceptConnection = onCall(async (data, context) => {
     }
 
     var pend = res.get("pending");
-    const id = pend.splice(data.index, 1)[0];
-    var connections = res.get("connections");
-    connections.push(id);
-    ref.set({pending: pend, connections: connections});
-
-    const oref = db.doc("users/" + id);
-    const other = await oref.get();
-    if (!other.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-    
-    var out = other.get("outgoing");
-    out.splice(out.indexOf(uid), 1);
-    connections = other.get("connections");
-    connections.push(uid);
-    oref.set({connections: connections, outgoing: out});
+    await ref.update({pending: FieldValue.arrayRemove(pend[data.index]), connections: FieldValue.arrayUnion(pend[data.index])});
+    await db.doc("users/" + pend[data.index]).update({pending: FieldValue.arrayRemove(uid), connections: FieldValue.arrayUnion(uid)});
     //TODO send an email notification
 });
 
 /** Denys an incoming connection request
- * @param {number} index the index of the connection request to deny (per @function listPending )
+ * @param {number} index the index of the connection request to deny (per @function pending )
+ * @throws {HttpsError<not-found>} if current user does not exist
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const denyConnection = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const deny = onCall(async (request) => {
+    const data = request.data;
+    const auth = request.auth;
+    if (!auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -101,31 +75,22 @@ export const denyConnection = onCall(async (data, context) => {
     }
 
     var pend = res.get("pending");
-    const id = pend.splice(data.index, 1)[0];
-    ref.set({pending: pend});
-
-    const oref = db.doc("users/" + id);
-    const other = await oref.get();
-    if (!other.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-    
-    var out = other.get("outgoing");
-    out.splice(out.indexOf(uid), 1);
-    oref.set({outgoing: out});
+    await ref.update({pending: FieldValue.arrayRemove(pend[data.index])});
+    await db.doc("users/" + pend[data.index]).update({outgoing: FieldValue.arrayRemove(uid)});
     //TODO send an email notification
 });
 
 /** Withdraws an outgoing connection request
- * @param {number} index the index of the connection request to withdraw (per @function listOutgoing )
- * @throws {HttpsError<not-found>} if one of the users does not exist
+ * @param {number} index the index of the connection request to withdraw (per @function outgoing )
+ * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const withdrawConnection = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const withdraw = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -134,31 +99,22 @@ export const withdrawConnection = onCall(async (data, context) => {
     }
 
     var out = res.get("outgoing");
-    const id = out.splice(data.index, 1)[0];
-    ref.set({outgoing: out});
-
-    const oref = db.doc("users/" + id);
-    const other = await oref.get();
-    if (!other.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-    
-    var pend = other.get("pending");
-    pend.splice(pend.indexOf(uid), 1);
-    oref.set({pending: pend});
+    await ref.update({outgoing: FieldValue.arrayRemove(out[data.index])});
+    await db.doc("users/" + out[data.index]).update({pending: FieldValue.arrayRemove(uid)});
     //TODO send an email notification
 });
 
 /** Deletes a connection
- * @param {number} index the index of the connection to delete (per @function listConnections )
- * @throws {HttpsError<not-found>} if one of the users does not exist
+ * @param {number} index the index of the connection to delete (per @function list )
+ * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const deleteConnection = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const del = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
@@ -167,18 +123,8 @@ export const deleteConnection = onCall(async (data, context) => {
     }
 
     var con = res.get("connections");
-    const id = con.splice(data.index, 1)[0];
-    ref.set({connections: con});
-
-    const oref = db.doc("users/" + id);
-    const other = await oref.get();
-    if (!other.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
-    }
-    
-    con = other.get("connections");
-    con.splice(con.indexOf(uid), 1);
-    oref.set({connections: con});
+    await ref.update({connections: FieldValue.arrayRemove(con[data.index])});
+    await db.doc("users/" + con[data.index]).update({connections: FieldValue.arrayRemove(uid)});
     //TODO send an email notification
 });
 
@@ -187,11 +133,12 @@ export const deleteConnection = onCall(async (data, context) => {
  * @throws {HttpsError<not-found>} if one of the users does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
-export const listConnections = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const list = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -220,11 +167,12 @@ export const listConnections = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
  */
-export const listPending = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const pending = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -253,11 +201,12 @@ export const listPending = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile
  */
-export const listOutgoing = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const outgoing = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -286,11 +235,12 @@ export const listOutgoing = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile , with an additional "common" field in each storing the number of common connections
  */
-export const commonConnections = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const common = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
@@ -320,11 +270,12 @@ export const commonConnections = onCall(async (data, context) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Array containing results of @function visProfile , with an additional "common" field in each storing the number of common interests
  */
-export const commonInterests = onCall(async (data, context) => {
-    const uid = context.auth.uid;
-    if (!uid) {
+export const interests = onCall(async (request) => {
+    const data = request.data;
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
     }
+    const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
