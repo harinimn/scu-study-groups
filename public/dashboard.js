@@ -1,9 +1,26 @@
-import { auth } from "./firebase.js";
+import { auth, db } from "./firebase.js";
+import {
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-auth.onAuthStateChanged(user => {
+import {
+  doc,
+  getDoc,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "signin.html";
+    return;
+  }
+
+  if (!user.emailVerified) {
+    window.location.href = "signin.html";
+    return;
+  }
+
   console.log("Logged in as:", user.email);
 });
-
 
 const suggested = [
   {
@@ -89,9 +106,7 @@ function renderSuggested() {
     left.append(pill, title, meta);
 
     const actions = el("div", "actions");
-    actions.append(
-      el("div", "matchPill", `${g.match}% match`)
-    );
+    actions.append(el("div", "matchPill", `${g.match}% match`));
 
     const joinBtn = el("button", "btnPrimary", "Join");
     joinBtn.type = "button";
