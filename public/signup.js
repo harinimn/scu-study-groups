@@ -62,7 +62,6 @@ form.addEventListener("submit", async (e) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
     await sendEmailVerification(cred.user);
-    await signOut(auth);
 
     window.location.href = "profile-setup.html";
     return;

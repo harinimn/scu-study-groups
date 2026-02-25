@@ -6,8 +6,6 @@
     <title>Set Up Profile • SCU Study Groups</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <script type="module" src="firebase.js"></script>
-  <script type="module" src="profile-setup.js"></script>
 
   <body>
     <main class="profilePage">
@@ -38,9 +36,9 @@
           <div class="selectWithIcon">
             <select class="selectRow" id="overallVis">
               <option>Everyone</option>
-              <option>People in same section</option>
-              <option>People in same study groups</option>
               <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
               <option>My connections only</option>
               <option>No one</option>
             </select>
@@ -54,9 +52,7 @@
             name blank or hide it, you'll appear as “Anonymous” to others. You can always update
             these settings later.
           </div>
-          <button class="tipClose" type="button" aria-label="Dismiss privacy tip">
-            ×
-          </button>
+          <button class="tipClose" type="button" aria-label="Dismiss privacy tip">×</button>
         </div>
 
         <!-- Fields -->
@@ -69,9 +65,9 @@
           <div class="selectWithIcon">
             <select class="selectRow" id="nameVis">
               <option>Everyone</option>
-              <option>People in same section</option>
-              <option>People in same study groups</option>
               <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
               <option>My connections only</option>
               <option>No one</option>
             </select>
@@ -89,9 +85,9 @@
           <div class="selectWithIcon">
             <select class="selectRow" id="majorVis">
               <option>Everyone</option>
-              <option>People in same section</option>
-              <option>People in same study groups</option>
               <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
               <option>My connections only</option>
               <option>No one</option>
             </select>
@@ -107,9 +103,9 @@
           <div class="selectWithIcon">
             <select class="selectRow" id="minorVis">
               <option>Everyone</option>
-              <option>People in same section</option>
-              <option>People in same study groups</option>
               <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
               <option>My connections only</option>
               <option>No one</option>
             </select>
@@ -126,9 +122,9 @@
           <div class="selectWithIcon">
             <select class="selectRow" id="classYearVis">
               <option>Everyone</option>
-              <option>People in same section</option>
-              <option>People in same study groups</option>
               <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
               <option>My connections only</option>
               <option>No one</option>
             </select>
@@ -151,9 +147,9 @@
           <div class="selectWithIcon">
             <select class="selectRow" id="genderVis">
               <option>Everyone</option>
-              <option>People in same section</option>
-              <option>People in same study groups</option>
               <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
               <option>My connections only</option>
               <option>No one</option>
             </select>
@@ -166,17 +162,14 @@
           <div class="inputWithIcon">
             <input class="textInput" id="contactEmail" type="email" placeholder="you@scu.edu" value="" />
           </div>
-          <div class="helperText">
-            This email will be shared with others based on your visibility settings. Defaults to your SCU email.
-          </div>
 
           <label class="label small" for="emailVis">Who can see your contact email?</label>
           <div class="selectWithIcon">
             <select class="selectRow" id="emailVis">
               <option>Everyone</option>
-              <option>People in same section</option>
-              <option>People in same study groups</option>
               <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
               <option>My connections only</option>
               <option>No one</option>
             </select>
@@ -219,9 +212,11 @@
           <label class="label small" for="interestsVis">Who can see your interests?</label>
           <div class="selectWithIcon">
             <select class="selectRow" id="interestsVis">
-              <option>People in same course</option>
-              <option>My connections only</option>
               <option>Everyone</option>
+              <option>People in same course</option>
+              <option>People in same section</option>
+              <option>People in study groups</option>
+              <option>My connections only</option>
               <option>No one</option>
             </select>
           </div>
@@ -241,9 +236,9 @@
             <div class="selectWithIcon">
               <select class="selectRow" id="pastClassVis">
                 <option>Everyone</option>
-                <option>People in same section</option>
-                <option>People in same study groups</option>
                 <option>People in same course</option>
+                <option>People in same section</option>
+                <option>People in study groups</option>
                 <option>My connections only</option>
                 <option>No one</option>
               </select>
@@ -255,9 +250,9 @@
             <div class="selectWithIcon">
               <select class="selectRow" id="currentClassVis">
                 <option>Everyone</option>
-                <option>People in same section</option>
-                <option>People in same study groups</option>
                 <option>People in same course</option>
+                <option>People in same section</option>
+                <option>People in study groups</option>
                 <option>My connections only</option>
                 <option>No one</option>
               </select>
@@ -269,9 +264,9 @@
             <div class="selectWithIcon">
               <select class="selectRow" id="futureClassVis">
                 <option>Everyone</option>
-                <option>People in same section</option>
-                <option>People in same study groups</option>
                 <option>People in same course</option>
+                <option>People in same section</option>
+                <option>People in study groups</option>
                 <option>My connections only</option>
                 <option>No one</option>
               </select>
@@ -283,48 +278,47 @@
             <span class="btnIcon">🧾</span>
             Complete Setup
           </button>
-
         </div>
       </div>
     </main>
 
     <script>
-        const tip = document.getElementById("privacyTip");
-        const closeBtn = document.querySelector(".tipClose");
-        if (tip && closeBtn) {
-          closeBtn.addEventListener("click", () => (tip.style.display = "none"));
-        }
+      const tip = document.getElementById("privacyTip");
+      const closeBtn = document.querySelector(".tipClose");
+      if (tip && closeBtn) {
+        closeBtn.addEventListener("click", () => (tip.style.display = "none"));
+      }
 
-        const interestsBox = document.querySelector(".interestsBox");
-        const interestButtons = Array.from(document.querySelectorAll(".interestItem"));
+      const interestsBox = document.querySelector(".interestsBox");
+      const interestButtons = Array.from(document.querySelectorAll(".interestItem"));
 
-        function setInterestSelected(btn, selected) {
-          btn.classList.toggle("isSelected", selected);
-          btn.setAttribute("aria-pressed", selected ? "true" : "false");
-        }
+      function setInterestSelected(btn, selected) {
+        btn.classList.toggle("isSelected", selected);
+        btn.setAttribute("aria-pressed", selected ? "true" : "false");
+      }
 
-        interestButtons.forEach((btn) => btn.setAttribute("aria-pressed", "false"));
+      interestButtons.forEach((btn) => btn.setAttribute("aria-pressed", "false"));
 
-        if (interestsBox) {
-          interestsBox.addEventListener("click", (e) => {
-            const btn = e.target.closest(".interestItem");
-            if (!btn) return;
+      if (interestsBox) {
+        interestsBox.addEventListener("click", (e) => {
+          const btn = e.target.closest(".interestItem");
+          if (!btn) return;
 
-            const isSelected = btn.classList.contains("isSelected");
-            setInterestSelected(btn, !isSelected);
+          const isSelected = btn.classList.contains("isSelected");
+          setInterestSelected(btn, !isSelected);
+        });
+      }
+
+      const search = document.getElementById("interestSearch");
+      if (search) {
+        search.addEventListener("input", () => {
+          const q = search.value.trim().toLowerCase();
+          interestButtons.forEach((btn) => {
+            const match = btn.textContent.toLowerCase().includes(q);
+            btn.style.display = match ? "" : "none";
           });
-        }
-
-        const search = document.getElementById("interestSearch");
-        if (search) {
-          search.addEventListener("input", () => {
-            const q = search.value.trim().toLowerCase();
-            interestButtons.forEach((btn) => {
-              const match = btn.textContent.toLowerCase().includes(q);
-              btn.style.display = match ? "" : "none";
-            });
-          });
-        }
+        });
+      }
     </script>
 
     <script type="module" src="firebase.js"></script>

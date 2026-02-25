@@ -848,6 +848,25 @@ body {
   background: #f9fafb;
 }
 
+.myGroupRight{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leaveBtn{
+  border: 1px solid #e5e7eb;
+  background: white;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.leaveBtn:hover{
+  background: #f3f4f6;
+}
+
 /* My groups list */
 .myGroups {
   display: flex;

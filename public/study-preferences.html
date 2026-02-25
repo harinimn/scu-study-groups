@@ -8,7 +8,6 @@
   </head>
 
   <body>
-    <!-- Top bar -->
     <header class="topbar">
       <div class="topbarLeft">
         <a class="backBtn" href="dashboard.html" aria-label="Back to dashboard">←</a>
@@ -18,7 +17,6 @@
           <div class="brandSub">Set your study preferences for each class</div>
         </div>
       </div>
-
       <div class="topbarRight">
         <div class="avatar">AN</div>
       </div>
@@ -34,161 +32,8 @@
             </div>
           </div>
 
-          <div class="accordion" id="classesAccordion">
-            <!-- Item 1 -->
-            <div class="accItem" data-course="CSCI 61" data-section="01">
-              <button class="accHeader" type="button">
-                <div class="accLeft">
-                  <span class="coursePill">CSCI 61</span>
-                  <div class="accText">
-                    <div class="accTitle">Course CSCI 61</div>
-                    <div class="accSub">Section 01</div>
-                  </div>
-                </div>
-                <span class="chev">⌄</span>
-              </button>
-
-              <div class="accBody">
-                <div class="formRow">
-                  <div class="rowLabel">
-                    <span class="rowIcon">⏱️</span>
-                    <div>
-                      <div class="rowTitle">Hours per week you want to study for this class</div>
-                    </div>
-                  </div>
-                  <input class="textInput" type="number" min="0" placeholder="e.g., 5" data-field="hours" />
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="formRow">
-                  <div class="rowLabel">
-                    <span class="rowIcon">🗓️</span>
-                    <div>
-                      <div class="rowTitle">Preferred study times</div>
-                      <div class="rowSub">Click on time slots to select when you're available to study</div>
-                    </div>
-                  </div>
-
-                  <div class="gridWrap">
-                    <div class="gridScroller">
-                      <table class="timeGrid" data-field="grid">
-                        <thead>
-                          <tr>
-                            <th class="timeCol"></th>
-                            <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <!-- JS toggles cells -->
-                          <tr><td class="timeCol">8:00 AM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">9:00 AM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">10:00 AM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">11:00 AM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">12:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">1:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">2:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">3:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">4:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">5:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">6:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">7:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                          <tr><td class="timeCol">8:00 PM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div class="gridHint">
-                      Tip: drag across cells for faster selection
-                    </div>
-                  </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="formRow">
-                  <div class="rowLabel">
-                    <span class="rowIcon">👤</span>
-                    <div>
-                      <div class="rowTitle">Study with</div>
-                    </div>
-                  </div>
-
-                  <div class="choiceList">
-                    <label class="choiceCard">
-                      <input type="checkbox" data-field="studyWith" value="same_section" />
-                      <div class="choiceText">
-                        <div class="choiceTitle">People in the same section</div>
-                        <div class="choiceSub">Section 01</div>
-                      </div>
-                    </label>
-
-                    <label class="choiceCard">
-                      <input type="checkbox" data-field="studyWith" value="other_sections" />
-                      <div class="choiceText">
-                        <div class="choiceTitle">People in other sections</div>
-                        <div class="choiceSub">Any section of CSCI 61</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <button class="saveBtn" type="button">Save Preferences for CSCI 61</button>
-              </div>
-            </div>
-
-            <!-- Item 2 -->
-            <div class="accItem" data-course="MATH 13" data-section="02">
-              <button class="accHeader" type="button">
-                <div class="accLeft">
-                  <span class="coursePill">MATH 13</span>
-                  <div class="accText">
-                    <div class="accTitle">Course MATH 13</div>
-                    <div class="accSub">Section 02</div>
-                  </div>
-                </div>
-                <span class="chev">⌄</span>
-              </button>
-
-              <div class="accBody">
-                <div class="miniNote">Open to configure preferences.</div>
-              </div>
-            </div>
-
-            <!-- Item 3 -->
-            <div class="accItem" data-course="PHIL 26" data-section="01">
-              <button class="accHeader" type="button">
-                <div class="accLeft">
-                  <span class="coursePill">PHIL 26</span>
-                  <div class="accText">
-                    <div class="accTitle">Course PHIL 26</div>
-                    <div class="accSub">Section 01</div>
-                  </div>
-                </div>
-                <span class="chev">⌄</span>
-              </button>
-              <div class="accBody">
-                <div class="miniNote">Open to configure preferences.</div>
-              </div>
-            </div>
-
-            <!-- Item 4 -->
-            <div class="accItem" data-course="ENGL 2" data-section="03">
-              <button class="accHeader" type="button">
-                <div class="accLeft">
-                  <span class="coursePill">ENGL 2</span>
-                  <div class="accText">
-                    <div class="accTitle">Course ENGL 2</div>
-                    <div class="accSub">Section 03</div>
-                  </div>
-                </div>
-                <span class="chev">⌄</span>
-              </button>
-              <div class="accBody">
-                <div class="miniNote">Open to configure preferences.</div>
-              </div>
-            </div>
-          </div>
+          <div class="miniNote" id="classesStatus">Loading your classes…</div>
+          <div class="accordion" id="classesAccordion"></div>
         </section>
 
         <div class="backWrap">
@@ -199,6 +44,5 @@
 
     <script type="module" src="firebase.js"></script>
     <script type="module" src="study-preferences.js"></script>
-
   </body>
 </html>
