@@ -62,13 +62,9 @@ form.addEventListener("submit", async (e) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
     await sendEmailVerification(cred.user);
-    await signOut(auth);
 
-    setMsg("Account created! Check your email to verify, then sign in.");
-
-    setTimeout(() => {
-      window.location.href = "signin.html";
-    }, 1500);
+    window.location.href = "profile-setup.html";
+    return;
   } catch (err) {
     console.error("SIGNUP ERROR:", err);
     setMsg(mapSignupError(err?.code), true);

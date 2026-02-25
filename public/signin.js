@@ -1,9 +1,14 @@
-import { auth } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 import {
   signInWithEmailAndPassword,
   sendEmailVerification,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+  doc,
+  getDoc,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const ENFORCE_SCU_EMAIL = false; // set true before deploy
 
@@ -60,10 +65,12 @@ form.addEventListener("submit", async (e) => {
       } catch (_) {}
 
       await signOut(auth);
-      setMsg("Please verify your email first. We just sent you a new verification email.", true);
+      setMsg(
+        "Please verify your email first. We just sent you a new verification email.",
+        true
+      );
       return;
     }
-
     setMsg("Signed in! Redirecting...");
     window.location.href = "dashboard.html";
   } catch (err) {

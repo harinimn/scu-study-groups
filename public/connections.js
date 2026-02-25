@@ -1,6 +1,16 @@
-import { auth } from "./firebase.js";
+import { auth, functions } from "./firebase.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
-console.log("CONNECTIONS JS LOCAL-STATE MODE");
+const api = {
+  list: httpsCallable(functions, "connections-list"),
+  pending: httpsCallable(functions, "connections-pending"),
+  outgoing: httpsCallable(functions, "connections-outgoing"),
+  send: httpsCallable(functions, "connections-send"),
+  accept: httpsCallable(functions, "connections-accept"),
+  deny: httpsCallable(functions, "connections-deny"),
+  withdraw: httpsCallable(functions, "connections-withdraw"),
+  del: httpsCallable(functions, "connections-del"),
+};
 
 /* Tabs UI */
 const tabButtons = document.querySelectorAll(".segBtn");
@@ -252,8 +262,13 @@ bc.onmessage = (event) => {
   renderAll();
 };
 
+/* compute index */
+function findIndexInIncoming(id) {
+  return state.incoming.findIndex((p) => p.id === id);
+}
+
 /* Click handling (event delegation)*/
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-action]");
   if (!btn) return;
 
@@ -262,40 +277,45 @@ document.addEventListener("click", (e) => {
   const id = card?.dataset?.id;
   if (!id) return;
 
-  if (action === "remove") {
-    if (!confirm("Remove this connection?")) return;
-    state.connections = state.connections.filter((p) => p.id !== id);
-    renderAll();
-    return;
-  }
+  try {
+    if (action === "accept") {
+      await api.accept({ index: findIndexInIncoming(id) });
+      await loadAll();
+      return;
+    }
 
-  if (action === "accept") {
-    const person = state.incoming.find((p) => p.id === id);
-    if (!person) return;
-    state.incoming = state.incoming.filter((p) => p.id !== id);
-    state.connections.unshift(person);
-    renderAll();
-    return;
-  }
+    if (action === "deny") {
+      const idx = findIndexInIncoming(id);
+      await api.deny({ index: idx });
+      await loadAll();
+      return;
+    }
 
-  if (action === "deny") {
-    state.incoming = state.incoming.filter((p) => p.id !== id);
-    renderAll();
-    return;
-  }
+    if (action === "withdraw") {
+      const idx = state.outgoing.findIndex((p) => p.id === id);
+      await api.withdraw({ index: idx });
+      await loadAll();
+      return;
+    }
 
-  if (action === "withdraw") {
-    state.outgoing = state.outgoing.filter((p) => p.id !== id);
-    renderAll();
-    return;
-  }
+    if (action === "remove") {
+      const idx = state.connections.findIndex((p) => p.id === id);
+      await api.del({ index: idx });
+      await loadAll();
+      return;
+    }
 
-  if (action === "connect") {
-    const person = state.discover.find((p) => p.id === id);
-    if (!person) return;
-    state.outgoing.unshift(person);
-    renderAll();
-    return;
+    if (action === "connect") {
+      // if you want "connect" button in discover tab to actually send request:
+      const person = state.discover.find((p) => p.id === id);
+      if (!person) return;
+      await api.send({ id: person.id });
+      await loadAll();
+      return;
+    }
+  } catch (err) {
+    console.error("Action failed:", action, err);
+    alert("Backend error. Try again.");
   }
 });
 
@@ -315,47 +335,47 @@ if (clearSearchBtn) {
   });
 }
 
-/* Seed demo data */
-function seed() {
-  const mk = (id, name, major, email, courses) => ({
-    id,
-    name,
-    major,
-    email,
-    courses,
-    initials: initialsFromName(name),
-  });
-
-  state.connections = [
-    mk("u1", "Sarah Chen", "Computer Science", "schen@scu.edu", ["CSCI 61", "MATH 13"]),
-    mk("u2", "Anonymous", "", "", ["PHIL 26"]),
-    mk("u3", "Michael Rodriguez", "Mathematics", "mrodriguez@scu.edu", ["MATH 13"]),
+/* load function */
+async function loadAll() {
+  const fields = [
+    ["name", "Anonymous"],
+    ["major", ""],
+    ["email", ""],
+    ["courses", []],
   ];
 
-  state.incoming = [
-    mk("u4", "Emily Thompson", "Engineering", "ethompson@scu.edu", ["MATH 13"]),
-    mk("u5", "David Kim", "Computer Science", "dkim@scu.edu", ["CSCI 61"]),
-  ];
+  const [connectionsRes, incomingRes, outgoingRes] = await Promise.all([
+    api.list({ fields }),
+    api.pending({ fields }),
+    api.outgoing({ fields }),
+  ]);
 
-  state.outgoing = [
-    mk("u6", "A Johnson", "", "ajohnson@scu.edu", ["ENGL 2"]),
-  ];
+  state.connections = (connectionsRes.data || []).map((p) => ({
+    ...p,
+    initials: p.initials || initialsFromName(p.name),
+  }));
 
-  state.discover = [
-    mk("u7", "Jessica Wu", "Computer Science", "jwu@scu.edu", ["CSCI 61"]),
-    mk("u8", "Marcus Lee", "Mathematics", "mlee@scu.edu", ["MATH 13"]),
-    mk("u9", "Anonymous", "", "", ["PHIL 26"]),
-  ];
+  state.incoming = (incomingRes.data || []).map((p) => ({
+    ...p,
+    initials: p.initials || initialsFromName(p.name),
+  }));
+
+  state.outgoing = (outgoingRes.data || []).map((p) => ({
+    ...p,
+    initials: p.initials || initialsFromName(p.name),
+  }));
+
+  state.discover = [];
+  renderAll();
 }
 
 /* Boot*/
-auth.onAuthStateChanged((user) => {
-  if (!user) {
-    console.log("Not logged in");
-    return;
+auth.onAuthStateChanged(async (user) => {
+  if (!user) return;
+  try {
+    await loadAll();
+  } catch (e) {
+    console.error("Failed to load connections:", e);
+    alert("Backend error loading connections.");
   }
-  console.log("Logged in as:", user.email);
-
-  seed();
-  renderAll();
 });
