@@ -1,8 +1,8 @@
 /** Handles methods related to connections */
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { initializeApp } from 'firebase-admin/app';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { initializeApp } from "firebase-admin/app";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 initializeApp();
 const db = getFirestore();
@@ -12,12 +12,12 @@ const db = getFirestore();
  * @param {number} index the uid of the person to send a request to
  * @param {string} email the email of the person to send a request to
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
- * @throws {HttpsError<not-found>} if target user doesn't exist
+ * @throws {HttpsError<not-found>} if target user doesn"t exist
  */
 export const send = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
@@ -25,7 +25,7 @@ export const send = onCall(async (request) => {
     if (id === undefined) {
         const query = await db.collection("users").where("main", "==", data.email).limit(1).get();
         if (query.empty) {
-            throw new HttpsError('not-found', 'The target user doesn\' exist.');
+            throw new HttpsError("not-found", "The target user doesn\" exist.");
         }
         id = query.docs[0].id;
     }
@@ -34,8 +34,8 @@ export const send = onCall(async (request) => {
     await db.doc("users/" + uid).update({outgoing: arrayUnion(data.id)});
     await db.doc("email/connection_request").update({toUids: [id], delivery: FieldValue.delete(), message:
         {
-        subject: 'New connection request!',
-        text: 'You have recieved a new connection request.'
+        subject: "New connection request!",
+        text: "You have recieved a new connection request."
     }});
 });
 
@@ -47,14 +47,14 @@ export const send = onCall(async (request) => {
 export const accept = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
 
     var pend = res.get("pending");
@@ -62,8 +62,8 @@ export const accept = onCall(async (request) => {
     await db.doc("users/" + pend[data.index]).update({pending: FieldValue.arrayRemove(uid), connections: FieldValue.arrayUnion(uid)});
     await db.doc("email/connection_request").update({toUids: [pend[data.index]], delivery: FieldValue.delete(), message:
         {
-        subject: 'Accepted connection!',
-        text: 'One of your connection requests has been approved.'
+        subject: "Accepted connection!",
+        text: "One of your connection requests has been approved."
     }});
 });
 
@@ -76,14 +76,14 @@ export const deny = onCall(async (request) => {
     const data = request.data;
     const auth = request.auth;
     if (!auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
 
     var pend = res.get("pending");
@@ -99,14 +99,14 @@ export const deny = onCall(async (request) => {
 export const withdraw = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
 
     var out = res.get("outgoing");
@@ -122,14 +122,14 @@ export const withdraw = onCall(async (request) => {
 export const del = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const ref = db.doc("users/" + uid);
     const res = await ref.get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
 
     var con = res.get("connections");
@@ -145,13 +145,13 @@ export const del = onCall(async (request) => {
 export const list = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
     const classes = res.get("classes");
@@ -161,7 +161,7 @@ export const list = onCall(async (request) => {
     connections.forEach(async id => {
         const ref = await db.doc("users/" + id).get();
         if (!ref.exists) {
-            throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+            throw new HttpsError("not-found", "This user doesn\"t have any data.");
         }
         if (ref.get("def_vis") != 5) {
             out.push(await visProfile(data.fields, classes, connections, uid, id, ref.data(), groups));
@@ -179,13 +179,13 @@ export const list = onCall(async (request) => {
 export const pending = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
     const classes = res.get("classes");
@@ -195,7 +195,7 @@ export const pending = onCall(async (request) => {
     res.get("pending").forEach(async id => {
         const ref = await db.doc("users/" + id).get();
         if (!ref.exists) {
-            throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+            throw new HttpsError("not-found", "This user doesn\"t have any data.");
         }
         if (ref.get("def_vis") != 5) {
             out.push(await visProfile(data.fields, classes, connections, uid, id, ref.data(), groups));
@@ -213,13 +213,13 @@ export const pending = onCall(async (request) => {
 export const outgoing = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
     const classes = res.get("classes");
@@ -229,7 +229,7 @@ export const outgoing = onCall(async (request) => {
     res.get("outgoing").forEach(async id => {
         const ref = await db.doc("users/" + id).get();
         if (!ref.exists) {
-            throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+            throw new HttpsError("not-found", "This user doesn\"t have any data.");
         }
         if (ref.get("def_vis") != 5) {
             out.push(await visProfile(data.fields, classes, connections, uid, id, ref.data(), groups));
@@ -247,13 +247,13 @@ export const outgoing = onCall(async (request) => {
 export const common = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
     const classes = res.get("classes");
@@ -266,7 +266,7 @@ export const common = onCall(async (request) => {
         if (checkVis(connections, classes, uid, ref.get("classes"), ref.id, ref.get("def_vis"), groups)) {
             var cur = await visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups);
             var common = new Set(ref.get("connections"));
-            cur.set("common", common.intersection(set).size);
+            cur.update("common", common.intersection(set).size);
             out.push(cur);
         }
     });
@@ -282,13 +282,13 @@ export const common = onCall(async (request) => {
 export const interests = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
     const classes = res.get("classes");
@@ -302,7 +302,7 @@ export const interests = onCall(async (request) => {
         if (checkVis(connections, classes, uid, ref.get("classes"), ref.id, ref.get("def_vis"), groups)) {
             var cur = await visProfile(data.fields, classes, connections, uid, ref.id, ref.data(), groups);
             var common = new Set(ref.get("interests"));
-            cur.set("common", common.intersection(set).size);
+            cur.update("common", common.intersection(set).size);
             out.push(cur);
         }
     });
