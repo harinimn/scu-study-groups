@@ -1,15 +1,17 @@
 /** Handles methods related the classes screen */
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { initializeApp } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
 import { checkVis, visProfile } from "./visibility.mjs";
+
+import { logger } from "firebase-functions";
 
 initializeApp();
 const db = getFirestore();
 
-/** Lists the user's classes
+/** Lists the user"s classes
  * @param {any} quarter the quarter to list classes in, see @function setup
  * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
@@ -18,46 +20,48 @@ const db = getFirestore();
 export const get = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
     
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
-    let classes = await res.get([`classes.${data.quarter}`]);
-    for (c in classes) {
-        c.delete("slots");
-        c.delete("times");
-        c.delete("section");
-        c.delete("gender");
+    const classes = await res.get("classes." + data.quarter);
+    if (!classes) {
+        return [];
     }
-    return classes;
+    let out = [];
+    for (const c of classes) {
+        const {slots, times, same_section, gender, ...ins} = c;
+        out.push(ins);
+    }
+    return out;
 });
   
 /** Adds a class to the user
  * @param {any} quarter the quarter to list classes in, see @function setup
- * @param {Array<Map<string, any>>} class the class to add, see @function setup
+ * @param {Map<string, any>} class the class to add, see @function setup
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const add = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
     
-    data.class.set("vis", 0);
-    data.class.set("slots", 0);
-    data.class.set("times", []);
-    data.class.set("section", false);
-    data.class.set("gender", false);
-    await db.doc("users/" + uid).update({[`classes.${data.quarter}`]: FieldValue.arrayUnion(data.class)});
+    data.class.vis = 0;
+    data.class.slots = 0;
+    data.class.times = [];
+    data.class.same_section = false;
+    data.class.gender = false;
+    await db.doc("users/" + uid).update({["classes." + data.quarter]: FieldValue.arrayUnion(data.class)});
 });
 
-/** Removes one of the user's classes
+/** Removes one of the user"s classes
  * @param {any} quarter the quarter to list classes in, see @function setup
  * @param {number} class the index of the class to remove, per @function get
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
@@ -65,11 +69,19 @@ export const add = onCall(async (request) => {
 export const del = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
-    await db.doc("users/" + uid).update({[`classes.${data.quarter}`]: FieldValue.arrayRemove(data.class)});
+    const ref =  db.doc("users/" + uid);
+    const res = await ref.get();
+    if (!res.exists) {
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
+    }
+
+    let classes = res.data().classes[data.quarter];
+    classes.splice(data.class, 1);
+    await ref.update({["classes." + data.quarter]: classes});
 });
 
 /** Sets the visiblity of a class (all interacting methods ensure it fits with the period modifier)
@@ -81,11 +93,11 @@ export const del = onCall(async (request) => {
 export const setVis = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
-        
-    await db.doc("users/" + uid).update({[`classes.${data.quarter}.vis`]: data.vis})
+    
+    await db.doc("users/" + uid).update({["classes." + data.quarter + "[" + data.class + "].vis"]: data.vis})
 });
 
 /** Shows the usesrs in the same section of a class
@@ -100,13 +112,13 @@ export const setVis = onCall(async (request) => {
 export const listSection = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
     const def = await db.get((data.quarter < data.cur ? "past" : (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis");
@@ -138,13 +150,13 @@ export const listSection = onCall(async (request) => {
 export const listCourse = onCall(async (request) => {
     const data = request.data;
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated to call this function.');
+        throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
     }
     const uid = request.auth.uid;
 
     const res = await db.doc("users/" + uid).get();
     if (!res.exists) {
-        throw new HttpsError('not-found', 'This user doesn\'t have any data.');
+        throw new HttpsError("not-found", "This user doesn\"t have any data.");
     }
     
     const def = await db.get((data.quarter < data.cur ? "past" : (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis");
