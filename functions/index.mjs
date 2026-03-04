@@ -1,6 +1,6 @@
 /** Defines global options and adds the other files */
 
-import { setGlobalOptions } from "firebase-functions";
+import {setGlobalOptions} from "firebase-functions";
 
 setGlobalOptions({maxInstances: 10});
 
