@@ -16,7 +16,6 @@ const db = getFirestore();
  *  must have ==, one entry per slot, default empty
  * @param {boolean} same_section can the user study with other sections
  * @param {boolean} gender does the user restrict to non-male students
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const set = onCall(async (request) => {
@@ -27,10 +26,6 @@ export const set = onCall(async (request) => {
   const uid = request.auth.uid;
 
   const ref = db.doc("users/" + uid);
-  const res = await ref.get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
 
   const quarter = await ref.get("classes." + data.quarter);
   const period = quarter[data.class];
@@ -97,11 +92,10 @@ export const set = onCall(async (request) => {
   }
 });
 
-/** Returns information about the user"s groups
+/** Returns information about the user's groups
  * @param {any} quarter the quarter to the class is in, see @function setup
  * @param {number} class the index of the class, per @function classes-get
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} the groups, with id,
  *  time (see @function set ),and members (containing @function visProfile )
@@ -113,31 +107,25 @@ export const get = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
+  const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
-  if (classes[data.quarter]) {
-    const groups = db.collection("groups");
-    const inside = await groups.where("quarter", "==", data.quarter)
-        .where("course", "==", classes[data.quarter][data.class].course)
-        .where("size", "!=", 1).where("members", "array-contains", uid).get();
+  const groups = db.collection("groups");
+  const inside = await groups.where("quarter", "==", data.quarter)
+      .where("course", "==", classes[data.quarter][data.class].course)
+      .where("size", "!=", 1).where("members", "array-contains", uid).get();
 
-    const out = [];
-    const connections = res.connections;
-    inside.forEach(async (ref) => {
-      const add = {id: ref.id, time: ref.time, members: []};
-      ref.members.forEach(async (id) =>
-        add.members.push(visProfile(data.fields,
-            classes, connections, uid,
-            id, await ref.get("users/" + id), groups)));
-      out.push(add);
-    });
-    return out;
-  }
+  const out = [];
+  const connections = res.connections;
+  inside.forEach(async (ref) => {
+    const add = {id: ref.id, time: ref.time, members: []};
+    ref.members.forEach(async (id) =>
+      add.members.push(visProfile(data.fields,
+          classes, connections, uid,
+          id, await ref.get("users/" + id), groups)));
+    out.push(add);
+  });
+  return out;
 });
 
 /** Removes the user from a group

@@ -13,7 +13,6 @@ const db = getFirestore();
  * @param {number} index the uid of the person to send a request to
  * @param {string} email the email of the person to send a request to
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
- * @throws {HttpsError<not-found>} if target user doesn"t exist
  */
 export const send = onCall(async (request) => {
   const data = request.data;
@@ -27,7 +26,13 @@ export const send = onCall(async (request) => {
     const query = await db.collection("users")
         .where("main", "==", data.email).limit(1).get();
     if (query.empty) {
-      throw new HttpsError("not-found", "The target user doesn\" exist.");
+      await db.doc("email/connection_request").update({
+        toUids: [id], delivery: FieldValue.delete(), message:
+                {
+                  subject: "New connection request!",
+                  text: "You recieved a connection request on scu connections.",
+                }});
+      return;
     }
     id = query.docs[0].id;
   }
@@ -46,7 +51,6 @@ export const send = onCall(async (request) => {
 
 /** Accepts an incoming connection request
  * @param {number} index the request to accept (per @function pending )
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const accept = onCall(async (request) => {
@@ -57,12 +61,8 @@ export const accept = onCall(async (request) => {
   const uid = request.auth.uid;
 
   const ref = db.doc("users/" + uid);
-  const res = await ref.get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
 
-  const pend = res.get("pending");
+  const pend = (await ref.get()).data().pending;
   await ref.update({
     pending: FieldValue.arrayRemove(pend[data.index]),
     connections: FieldValue.arrayUnion(pend[data.index])});
@@ -79,7 +79,6 @@ export const accept = onCall(async (request) => {
 
 /** Denys an incoming connection request
  * @param {number} index the connection request to deny (per @function pending )
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const deny = onCall(async (request) => {
@@ -91,12 +90,8 @@ export const deny = onCall(async (request) => {
   const uid = auth.uid;
 
   const ref = db.doc("users/" + uid);
-  const res = await ref.get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
 
-  const pend = res.get("pending");
+  const pend = (await ref.get()).data().pending;
   await ref.update({pending: FieldValue.arrayRemove(pend[data.index])});
   await db.doc("users/" + pend[data.index]).update({
     outgoing: FieldValue.arrayRemove(uid)});
@@ -104,7 +99,6 @@ export const deny = onCall(async (request) => {
 
 /** Withdraws an outgoing connection request
  * @param {number} index the request to withdraw (per @function outgoing )
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const withdraw = onCall(async (request) => {
@@ -115,12 +109,7 @@ export const withdraw = onCall(async (request) => {
   const uid = request.auth.uid;
 
   const ref = db.doc("users/" + uid);
-  const res = await ref.get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-
-  const out = res.get("outgoing");
+  const out = (await ref.get()).data().outgoing;
   await ref.update({outgoing: FieldValue.arrayRemove(out[data.index])});
   await db.doc("users/" + out[data.index]).update({
     pending: FieldValue.arrayRemove(uid)});
@@ -128,7 +117,6 @@ export const withdraw = onCall(async (request) => {
 
 /** Deletes a connection
  * @param {number} index the connection to delete (per @function list )
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const del = onCall(async (request) => {
@@ -139,12 +127,7 @@ export const del = onCall(async (request) => {
   const uid = request.auth.uid;
 
   const ref = db.doc("users/" + uid);
-  const res = await ref.get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-
-  const con = res.get("connections");
+  const con = (await ref.get()).data().connections;
   await ref.update({connections: FieldValue.arrayRemove(con[data.index])});
   await db.doc("users/" + con[data.index]).update({
     connections: FieldValue.arrayRemove(uid)});
@@ -152,7 +135,6 @@ export const del = onCall(async (request) => {
 
 /** Lists connections
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if one of the users does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const list = onCall(async (request) => {
@@ -162,24 +144,16 @@ export const list = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
-
+  const res = (await db.doc("users/" + uid).get()).data();
   const classes = res.classes;
   const connections = res.connections;
   const groups = db.collection("groups");
   const out = [];
   connections.forEach(async (id) => {
-    const ref = await db.doc("users/" + id).get();
-    if (!ref.exists) {
-      throw new HttpsError("not-found", "This user doesn\"t have any data.");
-    }
-    if (ref.get("def_vis") != 5) {
+    const ref = (await db.doc("users/" + id).get()).data();
+    if (ref.def_vis != 5) {
       out.push(visProfile(
-          data.fields, classes, connections, uid, id, ref.data(), groups));
+          data.fields, classes, connections, uid, id, ref, groups));
     }
   });
   return out;
@@ -187,7 +161,6 @@ export const list = onCall(async (request) => {
 
 /** Lists incoming connection requests
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if one of the user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Results of @function visProfile
  */
@@ -198,24 +171,17 @@ export const pending = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
+  const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
   const connections = res.connections;
   const groups = db.collection("groups");
   const out = [];
   res.pending.forEach(async (id) => {
-    const ref = await db.doc("users/" + id).get();
-    if (!ref.exists) {
-      throw new HttpsError("not-found", "This user doesn\"t have any data.");
-    }
-    if (ref.get("def_vis") != 5) {
+    const ref = (await db.doc("users/" + id).get()).data();
+    if (ref.def_vis != 5) {
       out.push(visProfile(data.fields,
-          classes, connections, uid, id, ref.data(), groups));
+          classes, connections, uid, id, ref, groups));
     }
   });
   return out;
@@ -223,7 +189,6 @@ export const pending = onCall(async (request) => {
 
 /** Lists outgoing connection requests
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if one of the user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Results of @function visProfile
  */
@@ -234,24 +199,17 @@ export const outgoing = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
+  const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
   const connections = res.connections;
   const groups = db.collection("groups");
   const out = [];
   res.outgoing.forEach(async (id) => {
-    const ref = await db.doc("users/" + id).get();
-    if (!ref.exists) {
-      throw new HttpsError("not-found", "This user doesn\"t have any data.");
-    }
-    if (ref.get("def_vis") != 5) {
+    const ref = (await db.doc("users/" + id).get()).data();
+    if (ref.def_vis != 5) {
       out.push(visProfile(
-          data.fields, classes, connections, uid, id, ref.data(), groups));
+          data.fields, classes, connections, uid, id, ref, groups));
     }
   });
   return out;
@@ -259,7 +217,6 @@ export const outgoing = onCall(async (request) => {
 
 /** Lists visible users with at least one common connections
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if one of the user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Results of @function visProfile ,
  *  with addition of "common" storing the number of common connections
@@ -271,11 +228,7 @@ export const common = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
+  const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
   const connections = res.connections;
@@ -300,7 +253,6 @@ export const common = onCall(async (request) => {
 
 /** Lists visible users with at least one common interest
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if one of the user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Results of @function visProfile ,
  *  with addition of "common" storing the number of common interests
@@ -312,12 +264,7 @@ export const interests = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
-
+  const res = (await db.doc("users/" + uid).get()).data();
   const classes = res.classes;
   const connections = res.connections;
   const interests = res.interests;

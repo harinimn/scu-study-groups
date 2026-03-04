@@ -9,36 +9,23 @@ import {checkVis, visProfile} from "./visibility.mjs";
 initializeApp();
 const db = getFirestore();
 
-/** Lists the user"s classes
+/** Lists the users's classes
  * @param {any} quarter the quarter to list classes in, see @function setup
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} array containing the classes,
  *  see @function add , @function setVis , and @function groups-set
  */
 export const get = onCall(async (request) => {
-  const data = request.data;
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated.");
   }
-  const uid = request.auth.uid;
 
-  const res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-
-  const classes = res.data().classes[data.quarter];
+  const classes = (await db.doc("users/" + request.auth.uid).get())
+      .data().classes[request.data.quarter];
   if (!classes) {
     return [];
   }
-  const out = [];
-  for (const c of classes) {
-    // eslint-disable-next-line no-unused-vars
-    const {slots, times, same_section, gender, ...ins} = c;
-    out.push(ins);
-  }
-  return out;
+  return classes;
 });
 
 /** Adds a class to the user
@@ -63,7 +50,7 @@ export const add = onCall(async (request) => {
   });
 });
 
-/** Removes one of the user"s classes
+/** Removes one of the users's classes
  * @param {any} quarter the quarter to list classes in, see @function setup
  * @param {number} class the index of the class to remove, per @function get
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
@@ -73,15 +60,9 @@ export const del = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated.");
   }
-  const uid = request.auth.uid;
 
-  const ref = db.doc("users/" + uid);
-  const res = await ref.get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-
-  const classes = res.data().classes[data.quarter];
+  const ref = db.doc("users/" + request.auth.uid);
+  const classes = (await ref.get()).data().classes[data.quarter];
   classes.splice(data.class, 1);
   await ref.update({["classes." + data.quarter]: classes});
 });
@@ -97,9 +78,8 @@ export const setVis = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated.");
   }
-  const uid = request.auth.uid;
 
-  const ref = db.doc("users/" + uid);
+  const ref = db.doc("users/" + request.auth.uid);
   const doc = (await ref.get()).data().classes[data.quarter];
   doc[data.class].vis = data.vis;
   await ref.update({["classes." + data.quarter]: doc});
@@ -110,7 +90,6 @@ export const setVis = onCall(async (request) => {
  * @param {any} cur the current quarter to determine time, see @function setup
  * @param {number} class the index of the class, per @function get
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Results of @function visProfile
  */
@@ -121,12 +100,7 @@ export const listSection = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
-
+  const res = (await db.doc("users/" + uid).get()).data();
   const def = await db.get((data.quarter < data.cur ? "past" :
     (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis");
   const query = await db.collection("users").get();
@@ -153,7 +127,6 @@ export const listSection = onCall(async (request) => {
  * @param {any} cur the current quarter, see @function setup
  * @param {number} class the index of the class, per @function get
  * @param {Map<string, any>} fields profile fields with field:default
- * @throws {HttpsError<not-found>} if current user does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} Results of @function visProfile
  */
@@ -164,12 +137,7 @@ export const listCourse = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  let res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  res = res.data();
-
+  const res = (await db.doc("users/" + uid).get()).data();
   const def = await db.get((data.quarter < data.cur ? "past" :
     (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis");
   const query = await db.collection("users").get();

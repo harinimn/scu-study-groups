@@ -8,14 +8,14 @@ import {logger} from "firebase-functions";
 initializeApp();
 const db = getFirestore();
 
-/** Sets this user"s profile information (main user visible info)
+/** Sets this users's profile information (main user visible info)
  * @param {number} def_vis the default visibility, see @function checkVis
  * @param {number} <field>_vis visibility of <field>
  * @param {number} past_classes_vis visibility of past classes
  * @param {number} cur_classes_vis the visibility setting for current classes
  * @param {number} future_classes_vis the visibility setting for future classes
  * @param {Array<any>} interests the user's interests, have to comply with ==
- * @param {Any} gender the user"s gender, with a falsy value for male
+ * @param {Any} gender the users's gender, with a falsy value for male
  * @param {Map<any, Array<Map<string, any>>>} classes keyed by ordered quarters;
  *  with values containing a map of course, section, and vis
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
@@ -48,8 +48,7 @@ export const setup = onCall(async (request) => {
   await ref.set(data);
 });
 
-/** Retrieves this user"s profile information (main user visible info)
- * @throws {HttpsError<not-found>} if current user does not exist
+/** Retrieves this users's profile information (main user visible info)
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Map<string, any>} the information used for the main settings page
  */
@@ -57,19 +56,10 @@ export const get = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
-  const uid = request.auth.uid;
 
-  const res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-
-  const out = res.data();
-  logger.debug(out);
-  out.delete("courses");
-  out.delete("connections");
-  out.delete("pending");
-  out.delete("outgoing");
+  // eslint-disable-next-line no-unused-vars
+  const {classes, courses, connections, pending, outgoing, ...out} =
+    (await db.doc("users/" + request.auth.uid).get()).data();
   logger.debug(out);
   return out;
 });

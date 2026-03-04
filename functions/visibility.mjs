@@ -96,10 +96,9 @@ export async function visProfile(
 }
 
 /**
- * Returns the visiblie profile of someone from the current user"s perspective
+ * Returns the visiblie profile of someone from the current users's perspective
  * @param {Map<string, any>} fields profile fields with field:default
  * @param {number} id the id of the user beeing seen
- * @throws {HttpsError<not-found>} if one of the users does not exist
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Map<string, any>} the visible profiles, see @function visProfile
  */
@@ -110,20 +109,11 @@ export const profile = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  const res = await db.doc("users/" + uid).get();
-  if (!res.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-
-  let ref = await db.doc("users/" + data.id).get();
+  const res = (await db.doc("users/" + uid).get()).data();
   const id = data.id;
-  if (!ref.exists) {
-    throw new HttpsError("not-found", "This user doesn\"t have any data.");
-  }
-  ref = ref.data();
-
   const classes = res.classes;
   const connections = res.connections;
   const groups = db.collection("groups");
-  return visProfile(data.fields, classes, connections, uid, id, ref, groups);
+  return visProfile(data.fields, classes, connections, uid, id,
+      (await db.doc("users/" + data.id).get()).data(), groups);
 });
