@@ -4,7 +4,7 @@ module.exports = {
     node: true,
   },
   parserOptions: {
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
   },
   extends: [
     "eslint:recommended",
@@ -15,6 +15,8 @@ module.exports = {
     "prefer-arrow-callback": "error",
     "quotes": ["error", "double", {"allowTemplateLiterals": true}],
     "no-undef": "error",
+    "linebreak-style": ["error", "windows"],
+    "camelcase": 0,
   },
   overrides: [
     {
@@ -23,6 +25,12 @@ module.exports = {
         mocha: true,
       },
       rules: {},
+    },
+    {
+      "files": ["**/*.mjs"],
+      "parserOptions": {
+        "sourceType": "module", // Treat .mjs files as modules
+      },
     },
   ],
   globals: {},
