@@ -43,7 +43,7 @@ export const add = onCall(async (request) => {
   data.class.vis = 0;
   data.class.slots = 0;
   data.class.times = [];
-  data.class.same_section = false;
+  data.class.section = false;
   data.class.gender = false;
   await db.doc("users/" + uid).update({
     ["classes." + data.quarter]: FieldValue.arrayUnion(data.class),
@@ -110,9 +110,9 @@ export const listSection = onCall(async (request) => {
   const groups = db.collection("groups");
   const out = [];
   query.forEach(async (ref) => {
-    const section = ref.classes.get(data.quarter).find((val) =>
+    const section = ref.classes[data.quarter].find((val) =>
       val.course == search.course && val.section == search.section);
-    const vis = Math.min(def, section.get("vis"));
+    const vis = Math.min(def, section.vis);
     if (section && (vis <= 2 ||checkVis(
         connections, classes, uid, ref.classes, ref.id, vis, groups))) {
       out.push(visProfile(
@@ -142,14 +142,14 @@ export const listCourse = onCall(async (request) => {
     (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis");
   const query = await db.collection("users").get();
   const classes = res.classes;
-  const search = classes.get(data.quarter)[data.class];
-  const connections = res.get("connections");
+  const search = classes[data.quarter][data.class];
+  const connections = res.connections;
   const groups = db.collection("groups");
   const out = [];
   query.forEach(async (ref) => {
-    const section = ref.classes.get(data.quarter).find((val) =>
+    const section = ref.classes[data.quarter].find((val) =>
       val.course == search.course && val.section != search.section);
-    const vis = Math.min(def, section.get("vis"));
+    const vis = Math.min(def, section.vis);
     if (section && (vis <= 1 || checkVis(
         connections, classes, uid, ref.classes, ref.id, vis, groups))) {
       out.push(visProfile(

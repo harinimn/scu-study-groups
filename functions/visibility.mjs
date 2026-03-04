@@ -52,7 +52,7 @@ export async function checkVis(
   }
 
   for (const [quarter, classes] of seen) {
-    const potential = looker.get(quarter);
+    const potential = looker[quarter];
     for (const c of classes) {
       if (potential.find((val) =>
         val.course == c.course && val.section == c.section)) {
@@ -87,9 +87,9 @@ export async function visProfile(
     out[key] = checkVis(connections,
         classes,
         looker,
-        other.get("classes"),
+        other.classes,
         seen,
-        other.get(key + "_vis"),
+        other[key + "_vis"],
         groups) ? other[key] : value;
   }
   return out;

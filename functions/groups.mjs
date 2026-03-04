@@ -14,7 +14,7 @@ const db = getFirestore();
  * @param {number} slots the number of time slots the user wants, default 0
  * @param {Array[any]} times when the user wants to study,
  *  must have ==, one entry per slot, default empty
- * @param {boolean} same_section can the user study with other sections
+ * @param {boolean} section can the user study with other sections
  * @param {boolean} gender does the user restrict to non-male students
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
@@ -27,13 +27,13 @@ export const set = onCall(async (request) => {
 
   const ref = db.doc("users/" + uid);
 
-  const quarter = await ref.get("classes." + data.quarter);
+  const quarter = (await ref.get()).data().classes[data.quarter];
   const period = quarter[data.class];
 
   period.vis = 0;
   period.slots = data.slots;
   period.times = data.times;
-  period.same_section = data.same_section;
+  period.section = data.section;
   period.gender = data.gender;
   await ref.update({["classes." + data.quarter]: quarter});
 
@@ -43,27 +43,28 @@ export const set = onCall(async (request) => {
       .where("gender", "==", !!data.gender);
   const inside = await found.where("members", "array-contains", uid).get();
   let num = inside.size;
-  inside.forEach((ref) => num -= Number(ref.get("size") == 1));
+  inside.forEach((ref) => num -= Number(ref.data().size == 1));
   if (num >= data.slots) return;
+  if (inside.size > 0) {
+    const exclude = [];
+    inside.forEach((ref) => {
+      exclude.push(ref.id);
+      const t = data.times.indexOf(ref.data().time);
+      if (t != -1) data.times.splice(t, 1);
+    });
+    found = found.where(FieldPath.documentId(), "not-in", exclude);
+  }
 
-  const exclude = [];
-  inside.forEach((ref) => {
-    exclude.push(ref.id);
-    const t = data.times.indexOf(ref.get("time"));
-    if (t != -1) data.times.splice(t, 1);
-  });
-  found = found.where(FieldPath.documentId(), "not-in", exclude);
-
-  if (data.same_section) found = found.where("section", "==", period.section);
+  if (data.section) found = found.where("section", "==", period.section);
   found = await found.where("time", "in", data.times).get();
 
   if (found.size > 1) {
-    data.times.splice(data.times.indexOf(found.docs[0].get("time")), 1);
+    data.times.splice(data.times.indexOf(found.docs[0].data().time), 1);
     await groups.doc(found.docs[0].id).update({
       members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
     ++num;
     for (let i = 1; i < found.size && num < data.slots; ++i) {
-      const t = data.times.indexOf(found.docs[i].get("time"));
+      const t = data.times.indexOf(found.docs[i].data().time);
       if (t != -1) {
         data.times.splice(t, 1);
         await groups.doc(found.docs[i].id).update({
@@ -71,19 +72,19 @@ export const set = onCall(async (request) => {
         ++num;
       }
     }
+  }
 
-    if (num == data.slots) {
-      inside.forEach(async (ref) => {
-        if (ref.get("size") == 1) await groups.doc(ref.id).delete();
-      });
-    }
+  if (num <= data.slots) {
+    inside.forEach(async (ref) => {
+      if (ref.data().size == 1) await groups.doc(ref.id).delete();
+    });
   }
 
   if (num < data.slots) {
     data.times.forEach(async (val) => await groups.add({
       quarter: data.quarter,
       course: period.course,
-      section: data.same_section?period.section:null,
+      section: data.section?period.section:null,
       members: [uid],
       count: 1,
       gender: data.gender,
@@ -118,11 +119,12 @@ export const get = onCall(async (request) => {
   const out = [];
   const connections = res.connections;
   inside.forEach(async (ref) => {
-    const add = {id: ref.id, time: ref.time, members: []};
-    ref.members.forEach(async (id) =>
+    const data = ref.data();
+    const add = {id: ref.id, time: data.time, members: []};
+    data.members.forEach(async (id) =>
       add.members.push(visProfile(data.fields,
           classes, connections, uid,
-          id, await ref.get("users/" + id), groups)));
+          id, await db.doc("users/" + id).get(), groups)));
     out.push(add);
   });
   return out;
