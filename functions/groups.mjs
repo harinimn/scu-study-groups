@@ -1,117 +1,133 @@
 /** Handles methods related to study groups */
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { visProfile } from "./visibility.mjs";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {initializeApp} from "firebase-admin/app";
+import {getFirestore, FieldValue, FieldPath} from "firebase-admin/firestore";
+import {visProfile} from "./visibility.mjs";
 
 initializeApp();
 const db = getFirestore();
 
 /** Fills user data related to study groups
  * @param {any} quarter the quarter to the class is in, see @function setup
- * @param {number} class the index of the class to set times for, per @function classes-get
- * @param {number} slots the number of time slots the user wants to study for, defaults to 0
- * @param {Array[any]} times an array of times when the user wants to study, times must adhere to ==, with one entry representing one slot, defaults to empty array
- * @param {boolean} same_section whether the user wants to study with students in other sections, defaults to false
- * @param {boolean} gender whether the user wants to study exclusively with non-male students, defaults to false
- * @throws {HttpsError<not-found>} if current user does not exist
+ * @param {number} class the index of the class, per @function classes-get
+ * @param {number} slots the number of time slots the user wants, default 0
+ * @param {Array[any]} times when the user wants to study,
+ *  must have ==, one entry per slot, default empty
+ * @param {boolean} section can the user study with other sections
+ * @param {boolean} gender does the user restrict to non-male students
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const set = onCall(async (request) => {
-    const data = request.data;
-    if (!request.auth)  throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
-    const uid = request.auth.uid;
-    
-    const ref = db.doc("users/" + uid);
-    const res = await ref.get();
-    if (!res.exists)  throw new HttpsError("not-found", "This user doesn\"t have any data.");
-        
-    const period = await ref.get("classes." + data.quarter + "[" + data.class + "]")
-    await ref.update({["classes." + data.quarter + "[" + data.class + "].slots"]: data.slots,
-                    ["classes." + data.quarter + "[" + data.class + "].times"]: data.times,
-                    ["classes." + data.quarter + "[" + data.class + "].same_section"]: data.same_section,
-                    ["classes." + data.quarter + "[" + data.class + "].gender"]: data.gender});
-    
-    const groups = db.collection("groups");
-    var found = groups.where("quarter", "==", data.quarter).where("course", "==", period.course).where("gender", "==", !!data.gender);
-    const inside = await found.where("members", "array-contains", uid).get();
-    var num = inside.size;
-    inside.forEach(ref => num -= Number(ref.get("size") == 1));
-    if (num >= data.slots) return;
+  const data = request.data;
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  const uid = request.auth.uid;
 
-    var exclude = [];
-    inside.forEach(ref => {
-        exclude.push(ref.id);
-        var t = data.times.indexOf(ref.get("time"));
-        if (t != -1) data.times.splice(t, 1);
+  const ref = db.doc("users/" + uid);
+
+  const quarter = (await ref.get()).data().classes[data.quarter];
+  const period = quarter[data.class];
+
+  period.vis = 0;
+  period.slots = data.slots;
+  period.times = data.times;
+  period.section = data.section;
+  period.gender = data.gender;
+  await ref.update({["classes." + data.quarter]: quarter});
+
+  const groups = db.collection("groups");
+  let found = groups.where("quarter", "==", data.quarter)
+      .where("course", "==", period.course)
+      .where("gender", "==", !!data.gender);
+  const inside = await found.where("members", "array-contains", uid).get();
+  let num = inside.size;
+  inside.forEach((ref) => num -= Number(ref.data().size == 1));
+  if (num >= data.slots) return;
+  if (inside.size > 0) {
+    const exclude = [];
+    inside.forEach((ref) => {
+      exclude.push(ref.id);
+      const t = data.times.indexOf(ref.data().time);
+      if (t != -1) data.times.splice(t, 1);
     });
-    found = found.where(documentId(), "not-in", exclude);
+    found = found.where(FieldPath.documentId(), "not-in", exclude);
+  }
 
-    if (data.same_section) found = found.where("section", "==", period.section);
-    found = await found.where("time", "in", data.times).get();
+  if (data.section) found = found.where("section", "==", period.section);
+  found = await found.where("time", "in", data.times).get();
 
-    if (found.size > 1) {
-        data.times.splice(data.times.indexOf(found.docs[0].get("time")), 1);
-        await groups.doc(found.docs[0].id).update({members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
+  if (found.size > 1) {
+    data.times.splice(data.times.indexOf(found.docs[0].data().time), 1);
+    await groups.doc(found.docs[0].id).update({
+      members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
+    ++num;
+    for (let i = 1; i < found.size && num < data.slots; ++i) {
+      const t = data.times.indexOf(found.docs[i].data().time);
+      if (t != -1) {
+        data.times.splice(t, 1);
+        await groups.doc(found.docs[i].id).update({
+          members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
         ++num;
-        for (var i = 1; i < found.size && num < data.slots; ++i) {
-            var t = data.times.indexOf(found.docs[i].get(time));
-            if (t != -1) {
-                data.times.splice(t, 1);
-                await groups.doc(found.docs[i].id).update({members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
-                ++num;
-            }
-        }
-
-        if (num == data.slots)
-            inside.forEach(async ref => {
-                if (ref.get(size) == 1) await groups.doc(ref.id).delete();
-            });
+      }
     }
+  }
 
-    if (num < data.slots)
-        data.times.forEach(async val => await groups.add({
-            quarter: data.quarter,
-            course: period.course,
-            section: data.same_section?period.section:null,
-            members: [uid],
-            count: 1,
-            gender: data.gender,
-            time: val
-        }));
+  if (num <= data.slots) {
+    inside.forEach(async (ref) => {
+      if (ref.data().size == 1) await groups.doc(ref.id).delete();
+    });
+  }
+
+  if (num < data.slots) {
+    data.times.forEach(async (val) => await groups.add({
+      quarter: data.quarter,
+      course: period.course,
+      section: data.section?period.section:null,
+      members: [uid],
+      count: 1,
+      gender: data.gender,
+      time: val,
+    }));
+  }
 });
 
-/** Returns information about the user"s groups
+/** Returns information about the user's groups
  * @param {any} quarter the quarter to the class is in, see @function setup
- * @param {number} class the index of the class to set times for, per @function classes-get
- * @param {Map<string, any>} fields map of profile fields with key for the field and value for default, see @function visProfile
- * @throws {HttpsError<not-found>} if current user does not exist
+ * @param {number} class the index of the class, per @function classes-get
+ * @param {Map<string, any>} fields profile fields with field:default
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
- * @returns {Array<Map<string, any>>} all the groups, with an id field, time field (see @function set ), and a members field containing results of @function visProfile
+ * @returns {Array<Map<string, any>>} the groups, with id,
+ *  time (see @function set ),and members (containing @function visProfile )
  */
 export const get = onCall(async (request) => {
-    const data = request.data;
-    if (!request.auth)  throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
-    const uid = request.auth.uid;
-    
-    const res = await db.doc("users/" + uid).get();
-    if (!res.exists)  throw new HttpsError("not-found", "This user doesn\"t have any data.");
-        
-    const classes = res.get("classes");
-    if (classes[data.quarter]) {
-        const groups = db.collection("groups");
-        const inside = await groups.where("quarter", "==", data.quarter).where("course", "==", classes[data.quarter][data.class].course).where("size", "!=", 1).where("members", "array-contains", uid).get();
+  const data = request.data;
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  const uid = request.auth.uid;
 
-        var out = [];
-        const connections = res.get("connections");
-        inside.forEach(async ref => {
-            var add = {id: ref.id, time: ref.time, members: []};
-            ref.members.forEach(async id => add.members.push(visProfile(fields, classes, connections, uid, id, await ref.get("users/" + id), groups)));
-            out.push(add);
-        });
-        return out;
-    }
+  const res = (await db.doc("users/" + uid).get()).data();
+
+  const classes = res.classes;
+  const groups = db.collection("groups");
+  const inside = await groups.where("quarter", "==", data.quarter)
+      .where("course", "==", classes[data.quarter][data.class].course)
+      .where("size", "!=", 1).where("members", "array-contains", uid).get();
+
+  const out = [];
+  const connections = res.connections;
+  inside.forEach(async (ref) => {
+    const data = ref.data();
+    const add = {id: ref.id, time: data.time, members: []};
+    data.members.forEach(async (id) =>
+      add.members.push(visProfile(data.fields,
+          classes, connections, uid,
+          id, await db.doc("users/" + id).get(), groups)));
+    out.push(add);
+  });
+  return out;
 });
 
 /** Removes the user from a group
@@ -119,8 +135,11 @@ export const get = onCall(async (request) => {
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  */
 export const leave = onCall(async (request) => {
-    const data = request.data;
-    if (!request.auth)  throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
-    const uid = request.auth.uid;
-    await db.doc("groups/" + data.group).update({members: FieldValue.arrayRemove(uid)});
+  const data = request.data;
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  const uid = request.auth.uid;
+  await db.doc("groups/" + data.group).update({
+    members: FieldValue.arrayRemove(uid)});
 });
