@@ -9,7 +9,6 @@ const api = {
   groupsLeave: httpsCallable(functions, "groups-leave"),
 };
 
-/* TEMP quarter/class until we have wire selectors */
 const ACTIVE_QUARTER = "Winter 2026";
 const ACTIVE_CLASS_INDEX = 0;
 
@@ -32,7 +31,6 @@ function el(tag, className, text) {
 
 /* Backend loaders */
 async function loadMyGroupsFromBackend() {
-  // groups-get expects: quarter, class, fields
   const fields = [
     ["name", "Anonymous"],
     ["major", ""],

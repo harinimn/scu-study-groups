@@ -8,11 +8,11 @@ const completeBtn = document.getElementById("completeSetupBtn");
 
 const api = {
   profileSetup: httpsCallable(functions, "profile-setup"),
+  profileGet: httpsCallable(functions, "profile-get"),
 };
 
-// ---- UI helpers ----
+// UI helpers
 function visTextToNum(text) {
-  // backend: 0 everyone, 1 same course, 2 same section, 3 study groups, 4 connections, 5 no one
   const t = (text || "").toLowerCase();
 
   if (t.includes("everyone")) return 0;
@@ -22,8 +22,25 @@ function visTextToNum(text) {
   if (t.includes("connection")) return 4;
   if (t.includes("no one")) return 5;
 
-  // safe default
   return 1;
+}
+
+function visNumToText(num) {
+  switch (num) {
+    case 0: return "Everyone";
+    case 1: return "People in same course";
+    case 2: return "People in same section";
+    case 3: return "People in study groups";
+    case 4: return "My connections only";
+    case 5: return "No one";
+    default: return "People in same course";
+  }
+}
+
+function setSelectByVis(id, num) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = visNumToText(num);
 }
 
 function getSelectVis(id) {
@@ -37,19 +54,73 @@ function getInputVal(id) {
   return (el?.value || "").trim();
 }
 
+function setInputVal(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = value || "";
+}
+
 function getSelectedInterests() {
   return [...document.querySelectorAll(".interestItem.isSelected")].map((b) =>
     (b.textContent || "").trim()
   );
 }
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) window.location.href = "signin.html";
+function setSelectedInterests(interests = []) {
+  const wanted = new Set(interests);
+  document.querySelectorAll(".interestItem").forEach((btn) => {
+    const label = (btn.textContent || "").trim();
+    const selected = wanted.has(label);
+    btn.classList.toggle("isSelected", selected);
+    btn.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+}
 
-  // default contactEmail to auth email if empty
+function fillProfileForm(data) {
+  if (!data) return;
+
+  setInputVal("name", data.name === "Anonymous" ? "" : data.name);
+  setInputVal("major", data.major);
+  setInputVal("minor", data.minor);
+  setInputVal("classYear", data.classYear);
+  setInputVal("contactEmail", data.email);
+
+  const genderEl = document.getElementById("gender");
+  if (genderEl && data.gender_text) {
+    genderEl.value = data.gender_text;
+  }
+
+  setSelectedInterests(data.interests || []);
+
+  setSelectByVis("overallVis", data.def_vis);
+  setSelectByVis("nameVis", data.name_vis);
+  setSelectByVis("majorVis", data.major_vis);
+  setSelectByVis("minorVis", data.minor_vis);
+  setSelectByVis("classYearVis", data.classYear_vis);
+  setSelectByVis("genderVis", data.gender_vis);
+  setSelectByVis("emailVis", data.email_vis);
+  setSelectByVis("interestsVis", data.interests_vis);
+  setSelectByVis("pastClassVis", data.past_classes_vis);
+  setSelectByVis("currentClassVis", data.cur_classes_vis);
+  setSelectByVis("futureClassVis", data.future_classes_vis);
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "signin.html";
+    return;
+  }
+
   const contactEmail = document.getElementById("contactEmail");
   if (contactEmail && !contactEmail.value) {
-    contactEmail.value = user?.email || "";
+    contactEmail.value = user.email || "";
+  }
+
+  try {
+    const res = await api.profileGet();
+    fillProfileForm(res.data);
+  } catch (err) {
+    console.error("profile-get failed:", err);
   }
 });
 
@@ -62,26 +133,21 @@ completeBtn?.addEventListener("click", async (e) => {
     return;
   }
 
-  // read UI
   const name = getInputVal("name");
   const major = getInputVal("major");
   const minor = getInputVal("minor");
   const classYear = getInputVal("classYear");
   const contactEmail = getInputVal("contactEmail") || (user.email || "");
 
-  const genderText = getInputVal("gender"); // select value
-  // partner backend expects falsy = male; keep it simple:
+  const genderText = getInputVal("gender");
   const gender = genderText && genderText !== "Male" ? true : false;
 
   const interests = getSelectedInterests();
-
   const def_vis = getSelectVis("overallVis");
 
   const payload = {
-    // overall visibility
     def_vis,
 
-    // field-level vis
     name_vis: getSelectVis("nameVis"),
     major_vis: getSelectVis("majorVis"),
     minor_vis: getSelectVis("minorVis"),
@@ -90,23 +156,17 @@ completeBtn?.addEventListener("click", async (e) => {
     email_vis: getSelectVis("emailVis"),
     interests_vis: getSelectVis("interestsVis"),
 
-    // class visibility defaults
     past_classes_vis: getSelectVis("pastClassVis"),
     cur_classes_vis: getSelectVis("currentClassVis"),
     future_classes_vis: getSelectVis("futureClassVis"),
 
-    // actual profile fields
     name: name || "Anonymous",
     major,
     minor,
     classYear,
-    email: contactEmail,        // store as "email" since he uses email_vis
+    email: contactEmail,
     interests,
-
-    // backend expects this shape
     gender,
-
-    // OPTIONAL: keep text too (backend ignores extra fields)
     gender_text: genderText || "",
   };
 

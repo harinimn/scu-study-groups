@@ -61,7 +61,7 @@ async function loadCourses() {
       code: c.course || "",
       section: c.section || "",
       visibility: backendVisToUi(c.vis),
-      _raw: c, // used for delete
+      _raw: c, 
     }));
 
     state.openCourseId = state.courses[0]?.id || "";
@@ -148,7 +148,7 @@ function wireHandlers() {
   });
 }
 
-// Modal (you already have UI; keep it)
+// Modal 
 const modalBackdrop = document.getElementById("modalBackdrop");
 const addCourseBtn = document.getElementById("addCourseBtn");
 const closeModalBtn = document.getElementById("closeModalBtn");
