@@ -149,6 +149,9 @@ export const list = onCall(async (request) => {
   const connections = res.connections;
   const groups = db.collection("groups");
   const out = [];
+  if (connections == undefined) {
+    return out;
+  }
   connections.forEach(async (id) => {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
@@ -177,6 +180,9 @@ export const pending = onCall(async (request) => {
   const connections = res.connections;
   const groups = db.collection("groups");
   const out = [];
+  if (res.pending == undefined) {
+    return out;
+  }
   res.pending.forEach(async (id) => {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
@@ -205,6 +211,9 @@ export const outgoing = onCall(async (request) => {
   const connections = res.connections;
   const groups = db.collection("groups");
   const out = [];
+  if (res.outgoing == undefined) {
+    return out;
+  }
   res.outgoing.forEach(async (id) => {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
