@@ -35,14 +35,17 @@ export const setup = onCall(async (request) => {
     }
   }
   const ref = db.doc("users/" + uid);
-  if (!(await ref.get()).exists) {
-    if (!("email" in data)) {
-      data.email = request.auth.token.email;
-    }
-    data.classes = {};
-    data.pending = [];
-    data.outgoing = [];
-    data.connections = [];
+  data.classes = {};
+  data.pending = [];
+  data.outgoing = [];
+  data.connections = [];
+  const res = await ref.get();
+  if (res.exists) {
+    const existingData = res.data();
+    data.classes = existingData.classes ?? {};
+    data.pending = existingData.pending ?? [];
+    data.outgoing = existingData.outgoing ?? [];
+    data.connections = existingData.connections ?? [];
   }
 
   await ref.set(data);

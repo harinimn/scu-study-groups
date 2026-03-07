@@ -43,7 +43,7 @@ export const add = onCall(async (request) => {
   data.class.vis = 0;
   data.class.slots = 0;
   data.class.times = [];
-  data.class.section = false;
+  data.class.same_section = false;
   data.class.gender = false;
   await db.doc("users/" + uid).update({
     ["classes." + data.quarter]: FieldValue.arrayUnion(data.class),

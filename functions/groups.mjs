@@ -33,7 +33,7 @@ export const set = onCall(async (request) => {
   period.vis = 0;
   period.slots = data.slots;
   period.times = data.times;
-  period.section = data.section;
+  period.same_section = data.section;
   period.gender = data.gender;
   await ref.update({["classes." + data.quarter]: quarter});
 
@@ -55,7 +55,7 @@ export const set = onCall(async (request) => {
     found = found.where(FieldPath.documentId(), "not-in", exclude);
   }
 
-  if (data.section) found = found.where("section", "==", period.section);
+  if (data.same_section) found = found.where("section", "==", period.section);
   found = await found.where("time", "in", data.times).get();
 
   if (found.size > 1) {
