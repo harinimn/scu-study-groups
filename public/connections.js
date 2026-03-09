@@ -5,6 +5,8 @@ const api = {
   list: httpsCallable(functions, "connections-list"),
   pending: httpsCallable(functions, "connections-pending"),
   outgoing: httpsCallable(functions, "connections-outgoing"),
+  common: httpsCallable(functions, "connections-common"),
+  interests: httpsCallable(functions, "connections-interests"),
   send: httpsCallable(functions, "connections-send"),
   accept: httpsCallable(functions, "connections-accept"),
   deny: httpsCallable(functions, "connections-deny"),
@@ -72,6 +74,16 @@ function pillTags(courses = []) {
   `;
 }
 
+function interestTags(interests = []) {
+  const list = Array.isArray(interests) ? interests : [];
+  if (!list.length) return "";
+  return `
+    <div class="tagRow">
+      ${list.map((i) => `<span class="tag">${i}</span>`).join("")}
+    </div>
+  `;
+}
+
 function matchesQuery(p) {
   const q = state.query.trim().toLowerCase();
   if (!q) return true;
@@ -81,12 +93,60 @@ function matchesQuery(p) {
     p.major,
     p.email,
     ...(Array.isArray(p.courses) ? p.courses : []),
+    ...(Array.isArray(p.interests) ? p.interests : []),
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
   return hay.includes(q);
+}
+
+function normalizePerson(p, source = "") {
+  const person = p || {};
+  return {
+    ...person,
+    id: person.id || "",
+    name: person.name || "Anonymous",
+    major: person.major || "",
+    email: person.email || "",
+    courses: Array.isArray(person.courses) ? person.courses : [],
+    interests: Array.isArray(person.interests) ? person.interests : [],
+    common: typeof person.common === "number" ? person.common : 0,
+    source,
+    initials: person.initials || initialsFromName(person.name),
+  };
+}
+
+function dedupeById(list) {
+  const map = new Map();
+
+  for (const raw of list) {
+    const p = normalizePerson(raw);
+
+    if (!p.id) continue;
+
+    if (!map.has(p.id)) {
+      map.set(p.id, p);
+      continue;
+    }
+
+    const prev = map.get(p.id);
+    map.set(p.id, {
+      ...prev,
+      ...p,
+      name: prev.name !== "Anonymous" ? prev.name : p.name,
+      major: prev.major || p.major,
+      email: prev.email || p.email,
+      courses: prev.courses?.length ? prev.courses : p.courses,
+      interests: prev.interests?.length ? prev.interests : p.interests,
+      common: Math.max(prev.common || 0, p.common || 0),
+      initials: prev.initials || p.initials,
+      source: prev.source || p.source,
+    });
+  }
+
+  return [...map.values()];
 }
 
 function setCounts() {
@@ -213,6 +273,8 @@ function renderDiscover() {
           ${p.major ? `<div class="personMeta">${p.major}</div>` : ""}
           ${p.email ? `<div class="personEmail">${p.email}</div>` : ""}
           ${pillTags(p.courses)}
+          ${p.interests?.length ? `<div class="personMeta">Interests</div>${interestTags(p.interests)}` : ""}
+          ${p.common ? `<div class="personMeta">${p.common} shared match${p.common === 1 ? "" : "es"}</div>` : ""}
         </div>
 
         <div class="actions">
@@ -237,7 +299,7 @@ function renderAll() {
   renderDiscover();
 }
 
-/* Cross-page sync (courses to connections)*/
+/* Cross-page sync (courses to connections) */
 const bc = new BroadcastChannel("scu-study-groups");
 
 bc.onmessage = (event) => {
@@ -245,7 +307,7 @@ bc.onmessage = (event) => {
 
   if (!msg || msg.type !== "connections:outgoing:add") return;
 
-  const p = msg.person;
+  const p = normalizePerson(msg.person);
   if (!p?.id) return;
 
   const alreadyOutgoing = state.outgoing.some((x) => x.id === p.id);
@@ -253,21 +315,26 @@ bc.onmessage = (event) => {
   const alreadyIncoming = state.incoming.some((x) => x.id === p.id);
   if (alreadyOutgoing || alreadyConnected || alreadyIncoming) return;
 
-  state.outgoing.unshift({
-    ...p,
-    initials: p.initials || initialsFromName(p.name),
-  });
+  state.outgoing.unshift(p);
   state.discover = state.discover.filter((x) => x.id !== p.id);
 
   renderAll();
 };
 
-/* compute index */
+/* Helpers for backend index-based actions */
 function findIndexInIncoming(id) {
   return state.incoming.findIndex((p) => p.id === id);
 }
 
-/* Click handling (event delegation)*/
+function findIndexInOutgoing(id) {
+  return state.outgoing.findIndex((p) => p.id === id);
+}
+
+function findIndexInConnections(id) {
+  return state.connections.findIndex((p) => p.id === id);
+}
+
+/* Click handling */
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-action]");
   if (!btn) return;
@@ -279,34 +346,38 @@ document.addEventListener("click", async (e) => {
 
   try {
     if (action === "accept") {
-      await api.accept({ index: findIndexInIncoming(id) });
+      const idx = findIndexInIncoming(id);
+      if (idx < 0) return;
+      await api.accept({ index: idx });
       await loadAll();
       return;
     }
 
     if (action === "deny") {
       const idx = findIndexInIncoming(id);
+      if (idx < 0) return;
       await api.deny({ index: idx });
       await loadAll();
       return;
     }
 
     if (action === "withdraw") {
-      const idx = state.outgoing.findIndex((p) => p.id === id);
+      const idx = findIndexInOutgoing(id);
+      if (idx < 0) return;
       await api.withdraw({ index: idx });
       await loadAll();
       return;
     }
 
     if (action === "remove") {
-      const idx = state.connections.findIndex((p) => p.id === id);
+      const idx = findIndexInConnections(id);
+      if (idx < 0) return;
       await api.del({ index: idx });
       await loadAll();
       return;
     }
 
     if (action === "connect") {
-      // if you want "connect" button in discover tab to actually send request:
       const person = state.discover.find((p) => p.id === id);
       if (!person) return;
       await api.send({ id: person.id });
@@ -319,7 +390,7 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-/* Search*/
+/* Search */
 if (searchInput) {
   searchInput.addEventListener("input", () => {
     state.query = searchInput.value || "";
@@ -335,43 +406,45 @@ if (clearSearchBtn) {
   });
 }
 
-/* load function */
+/* Load all backend data */
 async function loadAll() {
   const fields = [
     ["name", "Anonymous"],
     ["major", ""],
     ["email", ""],
     ["courses", []],
+    ["interests", []],
   ];
 
-  const [connectionsRes, incomingRes, outgoingRes] = await Promise.all([
+  const [connectionsRes, incomingRes, outgoingRes, commonRes, interestsRes] = await Promise.all([
     api.list({ fields }),
     api.pending({ fields }),
     api.outgoing({ fields }),
+    api.common({ fields }),
+    api.interests({ fields }),
   ]);
 
-  state.connections = (connectionsRes.data || []).map((p) => ({
-    ...p,
-    initials: p.initials || initialsFromName(p.name),
-  }));
+  state.connections = dedupeById((connectionsRes.data || []).map((p) => normalizePerson(p, "connections")));
+  state.incoming = dedupeById((incomingRes.data || []).map((p) => normalizePerson(p, "incoming")));
+  state.outgoing = dedupeById((outgoingRes.data || []).map((p) => normalizePerson(p, "outgoing")));
 
-  state.incoming = (incomingRes.data || []).map((p) => ({
-    ...p,
-    initials: p.initials || initialsFromName(p.name),
-  }));
+  const discoverRaw = [
+    ...((commonRes.data || []).map((p) => normalizePerson(p, "common"))),
+    ...((interestsRes.data || []).map((p) => normalizePerson(p, "interests"))),
+  ];
 
-  state.outgoing = (outgoingRes.data || []).map((p) => ({
-    ...p,
-    initials: p.initials || initialsFromName(p.name),
-  }));
+  state.discover = dedupeById(discoverRaw)
+    .filter((p) => p.id)
+    .filter((p) => !state.connections.some((x) => x.id === p.id))
+    .sort((a, b) => (b.common || 0) - (a.common || 0));
 
-  state.discover = [];
   renderAll();
 }
 
-/* Boot*/
+/* Boot */
 auth.onAuthStateChanged(async (user) => {
   if (!user) return;
+
   try {
     await loadAll();
   } catch (e) {

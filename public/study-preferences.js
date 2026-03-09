@@ -103,9 +103,17 @@ function itemBodyHTML({ course, section }) {
   `;
 }
 
-function itemHTML({ course, section, classIndex }) {
+function itemHTML({ course, section, classIndex, classData }) {
+  const encoded = encodeURIComponent(JSON.stringify(classData || {}));
+
   return `
-    <div class="accItem" data-course="${course}" data-section="${section}" data-class-index="${classIndex}">
+    <div
+      class="accItem"
+      data-course="${course}"
+      data-section="${section}"
+      data-class-index="${classIndex}"
+      data-class-json="${encoded}"
+    >
       <button class="accHeader" type="button">
         <div class="accLeft">
           <span class="coursePill">${course}</span>
@@ -124,6 +132,48 @@ function itemHTML({ course, section, classIndex }) {
   `;
 }
 
+function parseSavedClassData(item) {
+  try {
+    return JSON.parse(decodeURIComponent(item.dataset.classJson || ""));
+  } catch {
+    return {};
+  }
+}
+
+function applySavedPreferences(item) {
+  const classData = parseSavedClassData(item);
+
+  const hoursInput = item.querySelector('[data-field="hours"]');
+  if (hoursInput && typeof classData.slots === "number") {
+    hoursInput.value = classData.slots;
+  }
+
+  const savedTimes = Array.isArray(classData.times) ? classData.times : [];
+  savedTimes.forEach((t) => {
+    const [c, r] = String(t).split("-").map(Number);
+    const cell = item.querySelector(`.timeGrid td[data-c="${c}"][data-r="${r}"]`);
+    if (cell) cell.classList.add("isOn");
+  });
+
+  const sameSectionOnly =
+    typeof classData.same_section === "boolean"
+      ? classData.same_section
+      : typeof classData.section === "boolean"
+        ? classData.section
+        : null;
+
+  const sameSectionBox = item.querySelector('input[data-field="studyWith"][value="same_section"]');
+  const otherSectionsBox = item.querySelector('input[data-field="studyWith"][value="other_sections"]');
+
+  if (sameSectionOnly === true) {
+    if (sameSectionBox) sameSectionBox.checked = true;
+    if (otherSectionsBox) otherSectionsBox.checked = false;
+  } else if (sameSectionOnly === false) {
+    if (sameSectionBox) sameSectionBox.checked = false;
+    if (otherSectionsBox) otherSectionsBox.checked = true;
+  }
+}
+
 function renderClasses(classes) {
   const list = Array.isArray(classes) ? classes : [];
 
@@ -136,7 +186,12 @@ function renderClasses(classes) {
     .map((c, idx) => {
       const course = c.course || c.code || `Class ${idx + 1}`;
       const section = c.section ? String(c.section) : "";
-      return itemHTML({ course, section, classIndex: idx });
+      return itemHTML({
+        course,
+        section,
+        classIndex: idx,
+        classData: c,
+      });
     })
     .join("");
 
@@ -161,6 +216,7 @@ function wireAccordion() {
   acc.querySelectorAll(".accItem").forEach((item) => {
     wireGridInteractions(item);
     wireSave(item);
+    applySavedPreferences(item); 
   });
 }
 
@@ -180,10 +236,12 @@ function wireGridInteractions(item) {
   function isDataCell(td) {
     return td && td.tagName === "TD" && !td.classList.contains("timeCol");
   }
+
   function setCell(td, mode) {
     if (!isDataCell(td)) return;
     td.classList.toggle("isOn", mode === "on");
   }
+
   function toggleCell(td) {
     if (!isDataCell(td)) return;
     td.classList.toggle("isOn");
@@ -265,6 +323,8 @@ function wireSave(item) {
     try {
       await api.groupsSet(payload);
       alert(`Saved preferences for ${course}`);
+
+      await loadClasses();
     } catch (err) {
       console.error("groups-set failed:", err);
       alert("Backend error saving preferences.");

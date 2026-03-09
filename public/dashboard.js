@@ -1,26 +1,71 @@
 import { auth, db, functions } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
-/* Backend (groups.mjs) */
+
 const api = {
   groupsGet: httpsCallable(functions, "groups-get"),
   groupsLeave: httpsCallable(functions, "groups-leave"),
 };
 
-const ACTIVE_QUARTER = "Winter 2026";
+const ACTIVE_QUARTER = localStorage.getItem("activeQuarter") || "Winter 2026";
 const ACTIVE_CLASS_INDEX = 0;
 
-/* UI data */
-const suggested = [
-  { course: "CSCI 61", title: "Data Structures", day: "Monday, Jan 6", time: "2:00 PM - 4:00 PM", location: "Library Study Room 204", members: 4, match: 95 },
-  { course: "MATH 13", title: "Calculus I", day: "Wednesday, Jan 8", time: "4:00 PM - 6:00 PM", location: "O'Connor Hall Room 112", members: 5, match: 88 },
-  { course: "CSCI 61", title: "Data Structures", day: "Thursday, Jan 9", time: "10:00 AM - 12:00 PM", location: "Alameda Hall Room 139", members: 3, match: 82 },
-  { course: "PHIL 26", title: "Ethics", day: "Friday, Jan 10", time: "1:00 PM - 3:00 PM", location: "Library Study Room 201", members: 6, match: 78 },
-];
-
 const myGroups = [];
+
+function initialsFromName(name) {
+  if (!name) return "AN";
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? "A";
+  const second = parts[1]?.[0] ?? "";
+  return (first + second).toUpperCase();
+}
+
+function updateDashboardProfile(profile, user) {
+  const displayNameEl = document.getElementById("displayName");
+  const profileMenuBtn = document.getElementById("profileMenuBtn");
+
+  let name = profile?.name || "";
+
+  if (!name || name === "Anonymous") {
+    name = user?.email?.split("@")[0] || "Anonymous";
+  }
+
+  if (displayNameEl) {
+    displayNameEl.textContent = name;
+  }
+
+  if (profileMenuBtn) {
+    profileMenuBtn.textContent = initialsFromName(name);
+  }
+}
+
+const profileMenuBtn = document.getElementById("profileMenuBtn");
+const profileMenu = document.getElementById("profileMenu");
+const signOutBtn = document.getElementById("signOutBtn");
+
+profileMenuBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  profileMenu?.classList.toggle("isOpen");
+});
+
+document.addEventListener("click", (e) => {
+  if (!profileMenu || !profileMenuBtn) return;
+  if (!profileMenu.contains(e.target) && !profileMenuBtn.contains(e.target)) {
+    profileMenu.classList.remove("isOpen");
+  }
+});
+
+signOutBtn?.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    window.location.href = "signin.html";
+  } catch (err) {
+    console.error("sign out failed:", err);
+    alert("Could not sign out. Try again.");
+  }
+});
 
 function el(tag, className, text) {
   const n = document.createElement(tag);
@@ -29,7 +74,7 @@ function el(tag, className, text) {
   return n;
 }
 
-/* Backend loaders */
+/* Backend loader */
 async function loadMyGroupsFromBackend() {
   const fields = [
     ["name", "Anonymous"],
@@ -46,71 +91,17 @@ async function loadMyGroupsFromBackend() {
   return res.data || [];
 }
 
-/* Render */
+/* Suggested groups */
 function renderSuggested() {
   const wrap = document.getElementById("suggestedList");
   const count = document.getElementById("suggestCount");
   if (!wrap || !count) return;
 
-  wrap.innerHTML = "";
-  count.textContent = String(suggested.length);
-
-  suggested.forEach((g, idx) => {
-    const card = el("div", "suggestCard");
-
-    const top = el("div", "suggestTop");
-    const left = el("div");
-
-    const pill = el("div", "coursePill", g.course);
-    const title = el("div", "suggestTitle", g.title);
-
-    const meta = el("div", "meta");
-    const r1 = el("div", "metaRow");
-    r1.append(el("span", "metaIcon", "🗓️"), el("span", null, `${g.day} • ${g.time}`));
-
-    const r2 = el("div", "metaRow");
-    r2.append(el("span", "metaIcon", "📍"), el("span", null, g.location));
-
-    const r3 = el("div", "metaRow");
-    r3.append(el("span", "metaIcon", "👤"), el("span", null, `${g.members} members`));
-
-    meta.append(r1, r2, r3);
-    left.append(pill, title, meta);
-
-    const actions = el("div", "actions");
-    actions.append(el("div", "matchPill", `${g.match}% match`));
-
-    const joinBtn = el("button", "btnPrimary", "Join");
-    joinBtn.type = "button";
-    joinBtn.addEventListener("click", () => {
-      const joined = suggested.splice(idx, 1)[0];
-
-      myGroups.unshift({
-        id: "", 
-        course: joined.course,
-        name: `${joined.title} Study Group`,
-        next: `${joined.day} at ${joined.time}`,
-        members: joined.members,
-      });
-
-      renderSuggested();
-      renderMyGroups();
-    });
-
-    const skipBtn = el("button", "btnGhost", "Skip");
-    skipBtn.type = "button";
-    skipBtn.addEventListener("click", () => {
-      suggested.splice(idx, 1);
-      renderSuggested();
-    });
-
-    actions.append(joinBtn, skipBtn);
-    top.append(left, actions);
-    card.append(top);
-    wrap.append(card);
-  });
+  count.textContent = "0";
+  wrap.innerHTML = `<div class="miniNote">No suggested groups to show yet.</div>`;
 }
 
+/* My groups */
 function renderMyGroups() {
   const wrap = document.getElementById("myGroupsList");
   const count = document.getElementById("myCount");
@@ -118,6 +109,11 @@ function renderMyGroups() {
 
   wrap.innerHTML = "";
   count.textContent = String(myGroups.length);
+
+  if (!myGroups.length) {
+    wrap.innerHTML = `<div class="miniNote">You’re not in any study groups yet.</div>`;
+    return;
+  }
 
   myGroups.forEach((g) => {
     const row = el("div", "myRow");
@@ -138,16 +134,15 @@ function renderMyGroups() {
     const leaveBtn = el("button", "btnGhost", "Leave");
     leaveBtn.type = "button";
     leaveBtn.dataset.action = "leaveGroup";
-    leaveBtn.dataset.groupId = g.id || ""; 
+    leaveBtn.dataset.groupId = g.id || "";
 
     right.append(members, leaveBtn);
-
     row.append(left, right);
     wrap.append(row);
   });
 }
 
-/* Leave handler (backend) */
+/* Leave handler */
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-action='leaveGroup']");
   if (!btn) return;
@@ -166,6 +161,7 @@ document.addEventListener("click", async (e) => {
 
     const idx = myGroups.findIndex((g) => g.id === groupId);
     if (idx !== -1) myGroups.splice(idx, 1);
+
     renderMyGroups();
   } catch (err) {
     console.error("groups-leave failed:", err);
@@ -175,22 +171,34 @@ document.addEventListener("click", async (e) => {
 
 /* Auth boot */
 onAuthStateChanged(auth, async (user) => {
-  if (!user) return (window.location.href = "signin.html");
-  if (!user.emailVerified) return (window.location.href = "signin.html");
+  if (!user) {
+    window.location.href = "signin.html";
+    return;
+  }
+
+  if (!user.emailVerified) {
+    window.location.href = "signin.html";
+    return;
+  }
 
   const snap = await getDoc(doc(db, "users", user.uid));
-  if (!snap.exists()) return (window.location.href = "profile-setup.html");
+  if (!snap.exists()) {
+    window.location.href = "profile-setup.html";
+    return;
+  }
 
-  // load groups from backend
+  const profile = snap.data() || {};
+  updateDashboardProfile(profile, user);
+
   try {
     const backendGroups = await loadMyGroupsFromBackend();
 
     myGroups.length = 0;
     backendGroups.forEach((g) => {
       myGroups.push({
-        id: g.id, 
-        course: "CSCI 61", 
-        name: `Study Group • ${g.time || ""}`,
+        id: g.id || "",
+        course: g.course || "Course",
+        name: g.name || `Study Group • ${g.time || ""}`,
         next: g.time || "TBD",
         members: Array.isArray(g.members) ? g.members.length : 1,
       });
@@ -199,7 +207,10 @@ onAuthStateChanged(auth, async (user) => {
     renderMyGroups();
   } catch (err) {
     console.error("groups-get failed:", err);
+    renderMyGroups();
   }
+
+  renderSuggested();
 });
 
 renderSuggested();

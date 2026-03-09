@@ -632,6 +632,55 @@ body {
   gap: 10px;
 }
 
+.profileMenuWrap {
+  position: relative;
+}
+
+.avatarBtn {
+  border: none;
+  cursor: pointer;
+}
+
+.profileMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 8px;
+  display: none;
+  z-index: 50;
+}
+
+.profileMenu.isOpen {
+  display: flex;
+  flex-direction: column;
+}
+
+.profileMenuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.profileMenuItem:hover {
+  background: #f3f4f6;
+}
+
+.profileMenuItem.danger {
+  color: #b91c1c;
+}
+
 .avatar {
   width: 34px;
   height: 34px;

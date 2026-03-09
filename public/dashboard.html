@@ -19,7 +19,16 @@
       </div>
 
       <div class="topbarRight">
-        <a class="avatar" href="profile-setup.html" aria-label="Edit profile">AN</a>
+        <div class="profileMenuWrap">
+          <button class="avatar avatarBtn" id="profileMenuBtn" type="button" aria-label="Open profile menu">
+            AN
+          </button>
+
+          <div class="profileMenu" id="profileMenu">
+            <a class="profileMenuItem" href="profile-setup.html">Edit Profile</a>
+            <button class="profileMenuItem danger" id="signOutBtn" type="button">Sign Out</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -57,7 +66,7 @@
                 <div class="cardTitle">Suggested Study Groups</div>
                 <span class="badge" id="suggestCount">0</span>
               </div>
-              <div class="cardSub">Auto-generated groups based on your schedule and preferences</div>
+              <div class="cardSub">Suggested groups will appear here when matching is ready</div>
             </div>
           </div>
 
@@ -75,6 +84,7 @@
               <div class="cardSub">Groups you’re currently in</div>
             </div>
           </div>
+
           <div class="myGroups" id="myGroupsList"></div>
         </section>
       </div>
@@ -82,6 +92,5 @@
 
     <script type="module" src="firebase.js"></script>
     <script type="module" src="dashboard.js"></script>
-
   </body>
 </html>
