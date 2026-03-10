@@ -75,21 +75,23 @@ export const set = onCall(async (request) => {
   }
 
   if (num <= data.slots) {
-    inside.forEach(async (ref) => {
+    for (const ref of inside.docs) {
       if (ref.data().size == 1) await groups.doc(ref.id).delete();
-    });
+    }
   }
 
   if (num < data.slots) {
-    data.times.forEach(async (val) => await groups.add({
-      quarter: data.quarter,
-      course: period.course,
-      section: data.section?period.section:null,
-      members: [uid],
-      count: 1,
-      gender: data.gender,
-      time: val,
-    }));
+    for (const val of data.times) {
+      await groups.add({
+        quarter: data.quarter,
+        course: period.course,
+        section: data.section?period.section:null,
+        members: [uid],
+        count: 1,
+        gender: data.gender,
+        time: val,
+      });
+    }
   }
 });
 
@@ -111,22 +113,25 @@ export const get = onCall(async (request) => {
   const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
-  const groups = db.collection("groups");
-  const inside = await groups.where("quarter", "==", data.quarter)
-      .where("course", "==", classes[data.quarter][data.class].course)
-      .where("size", "!=", 1).where("members", "array-contains", uid).get();
+  const groups_db = db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid);
+  const groups = await groups_db.get();
+  const inside = await groups_db.where("quarter", "==", data.quarter)
+      .where("course", "==", classes[data.quarter][data.class].course).get();
 
   const out = [];
   const connections = res.connections;
-  inside.forEach(async (ref) => {
-    const data = ref.data();
-    const add = {id: ref.id, time: data.time, members: []};
-    data.members.forEach(async (id) =>
-      add.members.push(visProfile(data.fields,
-          classes, connections, uid,
-          id, await db.doc("users/" + id).get(), groups)));
+  for (const ref of inside.docs) {
+    const ref_data = ref.data();
+    const add = {id: ref.id, time: ref_data.time, members: []};
+    for (const id of ref_data.members) {
+      if (id == uid) continue;
+      add.members.push(await visProfile(data.fields,
+          classes, connections,
+          id, await db.doc("users/" + id).get(), groups));
+    }
     out.push(add);
-  });
+  }
   return out;
 });
 

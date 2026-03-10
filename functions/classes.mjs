@@ -5,6 +5,7 @@ import {initializeApp} from "firebase-admin/app";
 import {getFirestore, FieldValue} from "firebase-admin/firestore";
 
 import {checkVis, visProfile} from "./visibility.mjs";
+import {logger} from "firebase-functions";
 
 initializeApp();
 const db = getFirestore();
@@ -101,24 +102,27 @@ export const listSection = onCall(async (request) => {
   const uid = request.auth.uid;
 
   const res = (await db.doc("users/" + uid).get()).data();
-  const def = await db.get((data.quarter < data.cur ? "past" :
-    (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis");
+  const def = res[(data.quarter < data.cur ? "past" :
+    (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis"];
   const query = await db.collection("users").get();
   const classes = res.classes;
   const search = classes[data.quarter][data.class];
   const connections = res.connections;
-  const groups = db.collection("groups");
+  const groups = await db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid).get();
   const out = [];
-  query.forEach(async (ref) => {
-    const section = ref.classes[data.quarter].find((val) =>
+  for (const ref of query.docs) {
+    const ref_data = ref.data();
+    if (ref.id == uid || !ref_data.classes[data.quarter]) continue;
+    const section = ref_data.classes[data.quarter].find((val) =>
       val.course == search.course && val.section == search.section);
     const vis = Math.min(def, section.vis);
-    if (section && (vis <= 2 ||checkVis(
-        connections, classes, uid, ref.classes, ref.id, vis, groups))) {
-      out.push(visProfile(
-          data.fields, classes, connections, uid, ref.id, ref.data(), groups));
+    if (section && (vis <= 2 || await checkVis(
+        connections, classes, ref_data.classes, ref.id, vis, groups))) {
+      out.push(await visProfile(
+          data.fields, classes, connections, ref.id, ref_data, groups));
     }
-  });
+  }
   return out;
 });
 
@@ -131,6 +135,7 @@ export const listSection = onCall(async (request) => {
  * @returns {Array<Map<string, any>>} Results of @function visProfile
  */
 export const listCourse = onCall(async (request) => {
+  logger.debug(request);
   const data = request.data;
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated.");
@@ -138,23 +143,26 @@ export const listCourse = onCall(async (request) => {
   const uid = request.auth.uid;
 
   const res = (await db.doc("users/" + uid).get()).data();
-  const def = await db.get((data.quarter < data.cur ? "past" :
-    (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis");
+  const def = res[(data.quarter < data.cur ? "past" :
+    (data.quarter == data.cur ? "cur" : "future")) + "_classes_vis"];
   const query = await db.collection("users").get();
   const classes = res.classes;
   const search = classes[data.quarter][data.class];
   const connections = res.connections;
-  const groups = db.collection("groups");
+  const groups = await db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid).get();
   const out = [];
-  query.forEach(async (ref) => {
-    const section = ref.classes[data.quarter].find((val) =>
+  for (const ref of query.docs) {
+    const ref_data = ref.data();
+    if (ref.id == uid || !ref_data.classes[data.quarter]) continue;
+    const section = ref_data.classes[data.quarter].find((val) =>
       val.course == search.course && val.section != search.section);
     const vis = Math.min(def, section.vis);
-    if (section && (vis <= 1 || checkVis(
-        connections, classes, uid, ref.classes, ref.id, vis, groups))) {
-      out.push(visProfile(
-          data.fields, classes, connections, uid, ref.id, ref.data(), groups));
+    if (section && (vis <= 1 || await checkVis(
+        connections, classes, ref_data.classes, ref.id, vis, groups))) {
+      out.push(await visProfile(
+          data.fields, classes, connections, ref.id, ref_data, groups));
     }
-  });
+  }
   return out;
 });

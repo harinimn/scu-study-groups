@@ -11,7 +11,6 @@ const db = getFirestore();
  * Checks whether a user can see a specific field of another one
  * @param {Array<number>} connections the connections of the looker
  * @param {Map<any, Array<Map<string, any>>>} looker the classes of the looker
- * @param {number} lid the id of the looker
  * @param {Map<any, Array<Map<string, any>>>} seen the classes of the seen user
  * @param {number} sid the id of the seen
  * @param {number} field the visibility of the field.
@@ -20,13 +19,13 @@ const db = getFirestore();
  *  2: people in the same section
  *  3: people in study groups
  *  4: connections, 5: no one. If higher value permits, so does lower
- * @param {FirebaseFirestore.CollectionReference
- *  <FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData>} groups
- *  the reference to the groups collection
- * @return {boolean} whether the field is visible to the looker
+ * @param {FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData,
+ *  FirebaseFirestore.DocumentData>} groups
+ *  the reference to the groups the looker is in
+ * @return {Promise<boolean>} whether the field is visible to the looker
  */
 export async function checkVis(
-    connections, looker, lid, seen, sid, field, groups) {
+    connections, looker, seen, sid, field, groups) {
   if (field == 0) {
     return true;
   }
@@ -34,24 +33,25 @@ export async function checkVis(
     return false;
   }
 
-  if (connections.has(sid)) {
+  if (connections.includes(sid)) {
     return true;
   } if (field == 4) {
     return false;
   }
 
-  const found = await groups.where("count", "!=", 1)
-      .where("members", "array-contains", sid)
-      .where("members", "array-contains", lid)
-      .limit(1)
-      .get();
-  if (!found.empty) {
-    return true;
-  } if (field == 3) {
+  if (!groups.empty) {
+    for (const ref of groups) {
+      if (ref.data().members.includes(sid)) {
+        return true;
+      }
+    }
+  }
+  if (field == 3) {
     return false;
   }
 
-  for (const [quarter, classes] of seen) {
+  for (const [quarter, classes] in seen) {
+    if (!looker[quarter]) continue;
     const potential = looker[quarter];
     for (const c of classes) {
       if (potential.find((val) =>
@@ -72,21 +72,19 @@ export async function checkVis(
  * @param {Map<string, any>} fields map of fields with field:default
  * @param {Map<any, Array<Map<string, any>>>} classes the classes of the looker
  * @param {Array<number>} connections the connections of the looker
- * @param {number} looker the id of the looker
  * @param {number} seen the id of the seen
  * @param {Map<string, any>} other the data of the person being seen
- * @param {FirebaseFirestore.CollectionReference
- *  <FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData>} groups
- *  the reference to the groups collection
- * @return {Map<string, any>} visible profile, with "id" containing @param seen
+* @param {FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData,
+*  FirebaseFirestore.DocumentData>} groups
+*  the reference to the groups the looker is in
+ * @return {Promise<Map<string, any>>} visible profile, with @param seen as id
  */
 export async function visProfile(
-    fields, classes, connections, looker, seen, other, groups) {
+    fields, classes, connections, seen, other, groups) {
   const out = {id: seen};
   for (const [key, value] of fields) {
-    out[key] = checkVis(connections,
+    out[key] = await checkVis(connections,
         classes,
-        looker,
         other.classes,
         seen,
         other[key + "_vis"],
@@ -100,7 +98,7 @@ export async function visProfile(
  * @param {Map<string, any>} fields profile fields with field:default
  * @param {number} id the id of the user beeing seen
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
- * @returns {Map<string, any>} the visible profiles, see @function visProfile
+ * @returns {Promise<Map<string, any>>} the visible profile
  */
 export const profile = onCall(async (request) => {
   const data = request.data;
@@ -111,9 +109,8 @@ export const profile = onCall(async (request) => {
 
   const res = (await db.doc("users/" + uid).get()).data();
   const id = data.id;
-  const classes = res.classes;
-  const connections = res.connections;
-  const groups = db.collection("groups");
-  return visProfile(data.fields, classes, connections, uid, id,
-      (await db.doc("users/" + data.id).get()).data(), groups);
+  return await visProfile(data.fields, res.classes, res.connections, id,
+      (await db.doc("users/" + id).get()).data(),
+      await db.collection("groups").where("count", "!=", 1)
+          .where("members", "array-contains", uid).get());
 });
