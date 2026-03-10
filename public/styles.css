@@ -92,18 +92,19 @@ body {
     color: #6b7280;
 }
 
-.primaryBtn 
-{
-    background: #16a34a;
-    color: white;
-    border: none;
-    border-radius: 999px;
+.heroBtn {
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 999px;
 
-    padding: 12px 28px;
-    font-size: 16px;
-    font-weight: 600;
+  padding: 12px 28px;
+  font-size: 16px;
+  font-weight: 600;
 
-    cursor: pointer;
+  cursor: pointer;
+
+  width: fit-content;
 }
 
 .primaryBtn:hover 
