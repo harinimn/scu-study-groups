@@ -23,14 +23,16 @@ export const send = onCall(async (request) => {
 
   let id = data.id;
   if (id === undefined) {
+    const email = data.email;
     const query = await db.collection("users")
-        .where("main", "==", data.email).limit(1).get();
+        .where("main", "==", email).limit(1).get();
     if (query.empty) {
-      await db.doc("email/connection_request").update({
-        toUids: [id], delivery: FieldValue.delete(), message:
+      await db.doc("email/connection_request").set({
+        to: email, message:
                 {
                   subject: "New connection request!",
-                  text: "You recieved a connection request on scu connections.",
+                  text: "You recieved a connection request on scu connections" +
+                  "\nPlease create an account.",
                 }});
       return;
     }
@@ -41,8 +43,8 @@ export const send = onCall(async (request) => {
     pending: FieldValue.arrayUnion(uid)});
   await db.doc("users/" + uid).update({
     outgoing: FieldValue.arrayUnion(data.id)});
-  await db.doc("email/connection_request").update({
-    toUids: [id], delivery: FieldValue.delete(), message:
+  await db.doc("email/connection_request").set({
+    toUids: [id], message:
         {
           subject: "New connection request!",
           text: "You have recieved a new connection request.",
@@ -69,8 +71,8 @@ export const accept = onCall(async (request) => {
   await db.doc("users/" + pend[data.index]).update({
     pending: FieldValue.arrayRemove(uid),
     connections: FieldValue.arrayUnion(uid)});
-  await db.doc("email/connection_request").update({
-    toUids: [pend[data.index]], delivery: FieldValue.delete(), message:
+  await db.doc("email/connection_request").set({
+    toUids: [pend[data.index]], message:
         {
           subject: "Accepted connection!",
           text: "One of your connection requests has been approved.",
@@ -147,18 +149,19 @@ export const list = onCall(async (request) => {
   const res = (await db.doc("users/" + uid).get()).data();
   const classes = res.classes;
   const connections = res.connections;
-  const groups = db.collection("groups");
+  const groups = await db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid).get();
   const out = [];
   if (connections == undefined) {
     return out;
   }
-  connections.forEach(async (id) => {
+  for (const id of connections) {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
-      out.push(visProfile(
-          data.fields, classes, connections, uid, id, ref, groups));
+      out.push(await visProfile(
+          data.fields, classes, connections, id, ref, groups));
     }
-  });
+  }
   return out;
 });
 
@@ -178,18 +181,19 @@ export const pending = onCall(async (request) => {
 
   const classes = res.classes;
   const connections = res.connections;
-  const groups = db.collection("groups");
+  const groups = await db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid).get();
   const out = [];
   if (res.pending == undefined) {
     return out;
   }
-  res.pending.forEach(async (id) => {
+  for (const id of res.pending) {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
-      out.push(visProfile(data.fields,
-          classes, connections, uid, id, ref, groups));
+      out.push(await visProfile(data.fields,
+          classes, connections, id, ref, groups));
     }
-  });
+  }
   return out;
 });
 
@@ -209,18 +213,19 @@ export const outgoing = onCall(async (request) => {
 
   const classes = res.classes;
   const connections = res.connections;
-  const groups = db.collection("groups");
+  const groups = await db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid).get();
   const out = [];
   if (res.outgoing == undefined) {
     return out;
   }
-  res.outgoing.forEach(async (id) => {
+  for (const id of res.outgoing) {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
-      out.push(visProfile(
-          data.fields, classes, connections, uid, id, ref, groups));
+      out.push(await visProfile(
+          data.fields, classes, connections, id, ref, groups));
     }
-  });
+  }
   return out;
 });
 
@@ -231,7 +236,7 @@ export const outgoing = onCall(async (request) => {
  *  with addition of "common" storing the number of common connections
  */
 export const common = onCall(async (request) => {
-  const data = request.data;
+  const fields = request.data.fields;
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
@@ -241,22 +246,24 @@ export const common = onCall(async (request) => {
 
   const classes = res.classes;
   const connections = res.connections;
+  if (!connections || connections.length == 0) return [];
   const set = new Set(connections);
-  const groups = db.collection("groups");
+  const groups = await db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid).get();
   const query = await db.collection("users")
       .where("def_vis", "!=", 5)
       .where("connections", "array-contains-any", connections).get();
   const out = [];
-  query.forEach(async (ref) => {
-    if (checkVis(
-        connections, classes, uid, ref.classes, ref.id, ref.def_vis, groups)) {
-      const cur = visProfile(
-          data.fields, classes, connections, uid, ref.id, ref.data(), groups);
-      const common = new Set(ref.connections);
-      cur.update("common", common.intersection(set).size);
+  for (const ref of query.docs) {
+    const data = ref.data();
+    if (ref.id != uid && await checkVis(connections,
+        classes, data.classes, ref.id, data.def_vis, groups)) {
+      const cur = await visProfile(
+          fields, classes, connections, ref.id, data, groups);
+      cur.common = set.intersection(new Set(data.connections)).size;
       out.push(cur);
     }
-  });
+  }
   return out;
 });
 
@@ -267,7 +274,7 @@ export const common = onCall(async (request) => {
  *  with addition of "common" storing the number of common interests
  */
 export const interests = onCall(async (request) => {
-  const data = request.data;
+  const fields = request.data.fields;
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
@@ -277,21 +284,23 @@ export const interests = onCall(async (request) => {
   const classes = res.classes;
   const connections = res.connections;
   const interests = res.interests;
+  if (!interests || interests.length == 0) return [];
   const set = new Set(interests);
-  const groups = db.collection("groups");
+  const groups = await db.collection("groups").where("count", "!=", 1)
+      .where("members", "array-contains", uid).get();
   const query = await db.collection("users")
       .where("def_vis", "!=", 5)
       .where("interests", "array-contains-any", interests).get();
   const out = [];
-  query.forEach(async (ref) => {
-    if (checkVis(connections,
-        classes, uid, ref.classes, ref.id, ref.def_vis, groups)) {
-      const cur = visProfile(
-          data.fields, classes, connections, uid, ref.id, ref.data(), groups);
-      const common = new Set(ref.interests);
-      cur.update("common", common.intersection(set).size);
+  for (const ref of query.docs) {
+    const data = ref.data();
+    if (ref.id != uid && await checkVis(connections,
+        classes, data.classes, ref.id, data.def_vis, groups)) {
+      const cur = await visProfile(
+          fields, classes, connections, ref.id, data, groups);
+      cur.common = set.intersection(new Set(data.interests)).size;
       out.push(cur);
     }
-  });
+  }
   return out;
 });
