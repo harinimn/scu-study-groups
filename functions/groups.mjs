@@ -2,7 +2,7 @@
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {initializeApp} from "firebase-admin/app";
-import {getFirestore, FieldValue, FieldPath} from "firebase-admin/firestore";
+import {getFirestore, FieldValue} from "firebase-admin/firestore";
 import {visProfile} from "./visibility.mjs";
 
 initializeApp();
@@ -43,40 +43,36 @@ export const set = onCall(async (request) => {
       .where("gender", "==", !!data.gender);
   const inside = await found.where("members", "array-contains", uid).get();
   let num = inside.size;
-  inside.forEach((ref) => num -= Number(ref.data().size == 1));
+  inside.forEach((ref) => num -= Number(ref.data().count == 1));
   if (num >= data.slots) return;
+  const exclude = [];
   if (inside.size > 0) {
-    const exclude = [];
     inside.forEach((ref) => {
-      exclude.push(ref.id);
-      const t = data.times.indexOf(ref.data().time);
-      if (t != -1) data.times.splice(t, 1);
+      if (ref.data().count != 1) {
+        exclude.push(ref.id);
+        const t = data.times.indexOf(ref.data().time);
+        if (t != -1) data.times.splice(t, 1);
+      }
     });
-    found = found.where(FieldPath.documentId(), "not-in", exclude);
   }
 
-  if (data.same_section) found = found.where("section", "==", period.section);
-  found = await found.where("time", "in", data.times).get();
+  found = await found.where("time", "in", data.times)
+      .where("section", "==", data.section?period.section:null).get();
+  const docs = found.docs.filter((doc) => !exclude.includes(doc.id));
 
-  if (found.size > 1) {
-    data.times.splice(data.times.indexOf(found.docs[0].data().time), 1);
-    await groups.doc(found.docs[0].id).update({
-      members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
-    ++num;
-    for (let i = 1; i < found.size && num < data.slots; ++i) {
-      const t = data.times.indexOf(found.docs[i].data().time);
-      if (t != -1) {
-        data.times.splice(t, 1);
-        await groups.doc(found.docs[i].id).update({
-          members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
-        ++num;
-      }
+  for (const doc of docs) {
+    const t = data.times.indexOf(doc.data().time);
+    if (t != -1) {
+      data.times.splice(t, 1);
+      await groups.doc(doc.id).update({
+        members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
+      ++num;
     }
   }
 
   if (num <= data.slots) {
     for (const ref of inside.docs) {
-      if (ref.data().size == 1) await groups.doc(ref.id).delete();
+      if (ref.data().count == 1) await groups.doc(ref.id).delete();
     }
   }
 

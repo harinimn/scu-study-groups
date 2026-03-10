@@ -69,9 +69,9 @@ export const accept = onCall(async (request) => {
     pending: FieldValue.arrayRemove(pend[data.index]),
     connections: FieldValue.arrayUnion(pend[data.index])});
   await db.doc("users/" + pend[data.index]).update({
-    pending: FieldValue.arrayRemove(uid),
+    outgoing: FieldValue.arrayRemove(uid),
     connections: FieldValue.arrayUnion(uid)});
-  await db.doc("email/connection_request").set({
+  await db.doc("email/accepted_connection").set({
     toUids: [pend[data.index]], message:
         {
           subject: "Accepted connection!",
