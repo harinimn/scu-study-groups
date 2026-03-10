@@ -39,11 +39,9 @@ export async function checkVis(
     return false;
   }
 
-  if (!groups.empty) {
-    for (const ref of groups) {
-      if (ref.data().members.includes(sid)) {
-        return true;
-      }
+  for (const ref of groups.docs) {
+    if (ref.data().members.includes(sid)) {
+      return true;
     }
   }
   if (field == 3) {
