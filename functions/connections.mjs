@@ -24,8 +24,10 @@ export const send = onCall(async (request) => {
   let id = data.id;
   if (id === undefined) {
     const query = await db.collection("users")
-        .where("main", "==", data.email).limit(1).get();
+        .where("email", "==", data.email).limit(1).get();
     if (query.empty) {
+      await db.doc("users/" + uid).update({
+        outgoing: FieldValue.arrayUnion(data.email)});
       await db.doc("email/connection_request" + uid + data.email).set({
         to: data.email, message:
                 {
@@ -112,8 +114,10 @@ export const withdraw = onCall(async (request) => {
   const ref = db.doc("users/" + uid);
   const out = (await ref.get()).data().outgoing;
   await ref.update({outgoing: FieldValue.arrayRemove(out[data.index])});
-  await db.doc("users/" + out[data.index]).update({
-    pending: FieldValue.arrayRemove(uid)});
+  const pend_ref = db.doc("users/" + out[data.index]);
+  if (pend_ref.exists) {
+    await pend_ref.update({pending: FieldValue.arrayRemove(uid)});
+  }
 });
 
 /** Deletes a connection
@@ -137,6 +141,7 @@ export const del = onCall(async (request) => {
 /** Lists connections
  * @param {Map<string, any>} fields profile fields with field:default
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ * @returns {Array<Map<string, any>>} Results of @function visProfile
  */
 export const list = onCall(async (request) => {
   const data = request.data;
@@ -202,7 +207,7 @@ export const pending = onCall(async (request) => {
  * @returns {Array<Map<string, any>>} Results of @function visProfile
  */
 export const outgoing = onCall(async (request) => {
-  const data = request.data;
+  const fields = request.data.fields;
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
@@ -219,10 +224,15 @@ export const outgoing = onCall(async (request) => {
     return out;
   }
   for (const id of res.outgoing) {
-    const ref = (await db.doc("users/" + id).get()).data();
-    if (ref.def_vis != 5) {
-      out.push(await visProfile(
-          data.fields, classes, connections, id, ref, groups));
+    const ref = db.doc("users/" + id);
+    if (ref.exists) {
+      const data = (await ref.get()).data();
+      if (data.def_vis != 5) {
+        out.push(await visProfile(fields,
+            classes, connections, id, data, groups));
+      }
+    } else {
+      out.push({id: null, email: id});
     }
   }
   return out;
