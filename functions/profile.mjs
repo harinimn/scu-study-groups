@@ -2,7 +2,7 @@
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {initializeApp} from "firebase-admin/app";
-import {getFirestore} from "firebase-admin/firestore";
+import {FieldValue, getFirestore} from "firebase-admin/firestore";
 import {logger} from "firebase-functions";
 
 initializeApp();
@@ -65,4 +65,38 @@ export const get = onCall(async (request) => {
     (await db.doc("users/" + request.auth.uid).get()).data();
   logger.debug(out);
   return out;
+});
+
+/** Deletes this users's profile
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ */
+export const remove = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const uid = request.auth.uid;
+  const ref = db.doc("users/" + uid);
+  const profile = (await ref.get()).data();
+  for (const id of profile.connections) {
+    await db.doc("users/" + id).update({
+      connections: FieldValue.arrayRemove(uid)});
+  }
+  for (const id of profile.outgoing) {
+    await db.doc("users/" + id).update({
+      pending: FieldValue.arrayRemove(uid)});
+  }
+  for (const id of profile.pending) {
+    await db.doc("users/" + id).update({
+      outgoing: FieldValue.arrayRemove(uid)});
+  }
+
+  const groups = await db.collection("groups")
+      .where("members", "array-contains", uid).get();
+  for (const group of groups.docs) {
+    await db.doc("groups/" + group.id).update({
+      members: FieldValue.arrayRemove(uid)});
+  }
+
+  await ref.delete();
 });

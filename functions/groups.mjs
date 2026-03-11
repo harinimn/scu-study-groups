@@ -61,9 +61,17 @@ export const set = onCall(async (request) => {
   const docs = found.docs.filter((doc) => !exclude.includes(doc.id));
 
   for (const doc of docs) {
-    const t = data.times.indexOf(doc.data().time);
+    const g_data = doc.data();
+    const t = data.times.indexOf(g_data.time);
     if (t != -1) {
       data.times.splice(t, 1);
+      await db.collection("email/group_member" + doc.id + uid).set({
+        bccUids: g_data.ids, message:
+          {
+            subject: "New group member!",
+            text: "Someone joined your group for " + g_data.course +
+            ", meeting at " + g_data.time + " on scu connections.",
+          }});
       await groups.doc(doc.id).update({
         members: FieldValue.arrayUnion(uid), count: FieldValue.increment(1)});
       ++num;
@@ -143,4 +151,32 @@ export const leave = onCall(async (request) => {
   const uid = request.auth.uid;
   await db.doc("groups/" + data.group).update({
     members: FieldValue.arrayRemove(uid)});
+});
+
+/** Sends a message to a group
+ * @param {number} group the id of the group
+ * @param {string} message the message to send
+ * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
+ */
+export const send = onCall(async (request) => {
+  const data = request.data;
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  const uid = request.auth.uid;
+  const ids = [];
+  const group = (await db.doc("groups/" + data.group).get()).data();
+  group.members.forEach((id) => {
+    if (id != uid) {
+      ids.push(id);
+    }
+  });
+
+  await db.collection("email/group_email" + data.group + uid).set({
+    bccUids: ids, message:
+      {
+        subject: "New group message!",
+        text: "You recieved a message in your group for " + group.course +
+        ", meeting at " + group.time + " on scu connections:\n" + data.message,
+      }});
 });

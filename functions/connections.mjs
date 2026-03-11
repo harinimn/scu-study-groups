@@ -23,12 +23,11 @@ export const send = onCall(async (request) => {
 
   let id = data.id;
   if (id === undefined) {
-    const email = data.email;
     const query = await db.collection("users")
-        .where("main", "==", email).limit(1).get();
+        .where("main", "==", data.email).limit(1).get();
     if (query.empty) {
-      await db.doc("email/connection_request").set({
-        to: email, message:
+      await db.doc("email/connection_request" + uid + data.email).set({
+        to: data.email, message:
                 {
                   subject: "New connection request!",
                   text: "You recieved a connection request on scu connections" +
@@ -43,7 +42,7 @@ export const send = onCall(async (request) => {
     pending: FieldValue.arrayUnion(uid)});
   await db.doc("users/" + uid).update({
     outgoing: FieldValue.arrayUnion(data.id)});
-  await db.doc("email/connection_request").set({
+  await db.doc("email/connection_request" + uid + data.id).set({
     toUids: [id], message:
         {
           subject: "New connection request!",
@@ -71,7 +70,7 @@ export const accept = onCall(async (request) => {
   await db.doc("users/" + pend[data.index]).update({
     outgoing: FieldValue.arrayRemove(uid),
     connections: FieldValue.arrayUnion(uid)});
-  await db.doc("email/accepted_connection").set({
+  await db.doc("email/accepted_connection" + uid + pend[data.index]).set({
     toUids: [pend[data.index]], message:
         {
           subject: "Accepted connection!",
