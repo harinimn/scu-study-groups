@@ -4,7 +4,6 @@ import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {initializeApp} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {FieldValue, getFirestore} from "firebase-admin/firestore";
-import {logger} from "firebase-functions";
 
 initializeApp();
 const auth = getAuth();
@@ -25,7 +24,6 @@ const db = getFirestore();
  */
 export const setup = onCall(async (request) => {
   const data = request.data;
-  logger.debug(request.auth);
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
@@ -73,15 +71,13 @@ export const get = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
 
-  const ref = db.doc("users/" + request.auth.uid);
+  const ref = await db.doc("users/" + request.auth.uid).get();
   if (!ref.exists) {
     return [];
   }
 
   // eslint-disable-next-line no-unused-vars
-  const {classes, courses, connections, pending, outgoing, ...out} =
-      (await ref.get()).data();
-  logger.debug(out);
+  const {classes, courses, connections, pending, outgoing, ...out} = ref.data();
   return out;
 });
 
