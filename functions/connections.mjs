@@ -3,6 +3,7 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {initializeApp} from "firebase-admin/app";
 import {FieldValue, getFirestore} from "firebase-admin/firestore";
+import {logger} from "firebase-functions";
 import {visProfile, checkVis} from "./visibility.mjs";
 
 initializeApp();
@@ -25,6 +26,7 @@ export const send = onCall(async (request) => {
   if (id === undefined) {
     const query = await db.collection("users")
         .where("email", "==", data.email).limit(1).get();
+    logger.debug(query.empty);
     if (query.empty) {
       await db.doc("users/" + uid).update({
         outgoing: FieldValue.arrayUnion(data.email)});
@@ -40,11 +42,11 @@ export const send = onCall(async (request) => {
     id = query.docs[0].id;
   }
 
-  await db.doc("users/" + data.id).update({
+  await db.doc("users/" + id).update({
     pending: FieldValue.arrayUnion(uid)});
   await db.doc("users/" + uid).update({
-    outgoing: FieldValue.arrayUnion(data.id)});
-  await db.doc("email/connection_request" + uid + data.id).set({
+    outgoing: FieldValue.arrayUnion(id)});
+  await db.doc("email/connection_request" + uid + id).set({
     toUids: [id], message:
         {
           subject: "New connection request!",
@@ -115,7 +117,7 @@ export const withdraw = onCall(async (request) => {
   const out = (await ref.get()).data().outgoing;
   await ref.update({outgoing: FieldValue.arrayRemove(out[data.index])});
   const pend_ref = db.doc("users/" + out[data.index]);
-  if (pend_ref.exists) {
+  if ((await pend_ref.get()).exists) {
     await pend_ref.update({pending: FieldValue.arrayRemove(uid)});
   }
 });
@@ -224,9 +226,10 @@ export const outgoing = onCall(async (request) => {
     return out;
   }
   for (const id of res.outgoing) {
-    const ref = db.doc("users/" + id);
+    const ref = await db.doc("users/" + id).get();
+    logger.debug(id, ref.exists);
     if (ref.exists) {
-      const data = (await ref.get()).data();
+      const data = ref.data();
       if (data.def_vis != 5) {
         out.push(await visProfile(fields,
             classes, connections, id, data, groups));
@@ -235,6 +238,7 @@ export const outgoing = onCall(async (request) => {
       out.push({id: null, email: id});
     }
   }
+  logger.debug(out);
   return out;
 });
 
