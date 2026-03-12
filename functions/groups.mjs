@@ -65,7 +65,7 @@ export const set = onCall(async (request) => {
     const t = data.times.indexOf(g_data.time);
     if (t != -1) {
       data.times.splice(t, 1);
-      await db.collection("email/group_member" + doc.id + uid).set({
+      await db.doc("email/group_member" + doc.id + uid).set({
         bccUids: g_data.ids, message:
           {
             subject: "New group member!",
@@ -117,6 +117,9 @@ export const get = onCall(async (request) => {
   const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
+  if (!classes[data.quarter] || !classes[data.quarter][data.class]) {
+    return [];
+  }
   const groups_db = db.collection("groups").where("count", "!=", 1)
       .where("members", "array-contains", uid);
   const groups = await groups_db.get();
@@ -132,7 +135,7 @@ export const get = onCall(async (request) => {
       if (id == uid) continue;
       add.members.push(await visProfile(data.fields,
           classes, connections,
-          id, await db.doc("users/" + id).get(), groups));
+          id, (await db.doc("users/" + id).get()).data(), groups));
     }
     out.push(add);
   }
@@ -171,8 +174,7 @@ export const send = onCall(async (request) => {
       ids.push(id);
     }
   });
-
-  await db.collection("email/group_email" + data.group + uid).set({
+  await db.doc("email/group_email" + data.group + uid).set({
     bccUids: ids, message:
       {
         subject: "New group message!",
