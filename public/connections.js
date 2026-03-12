@@ -67,6 +67,12 @@ function initialsFromName(name) {
   return (first + second).toUpperCase();
 }
 
+function personKey(p) {
+  if (p?.id) return `id:${p.id}`;
+  if (p?.email) return `email:${String(p.email).trim().toLowerCase()}`;
+  return `anon:${p?.name || ""}`;
+}
+
 function pillTags(courses = []) {
   const list = Array.isArray(courses) ? courses : [];
   if (!list.length) return "";
@@ -107,37 +113,39 @@ function matchesQuery(p) {
 
 function normalizePerson(p, source = "") {
   const person = p || {};
+  const resolvedName = person.name || person.email || "Anonymous";
+
   return {
     ...person,
     id: person.id || "",
-    name: person.name || "Anonymous",
+    name: resolvedName,
     major: person.major || "",
     email: person.email || "",
     courses: Array.isArray(person.courses) ? person.courses : [],
     interests: Array.isArray(person.interests) ? person.interests : [],
     common: typeof person.common === "number" ? person.common : 0,
     source,
-    initials: person.initials || initialsFromName(person.name),
+    initials: person.initials || initialsFromName(resolvedName),
   };
 }
 
-function dedupeById(list) {
+function dedupePeople(list) {
   const map = new Map();
 
   for (const raw of list) {
     const p = normalizePerson(raw);
+    const key = personKey(p);
 
-    if (!p.id) continue;
-
-    if (!map.has(p.id)) {
-      map.set(p.id, p);
+    if (!map.has(key)) {
+      map.set(key, p);
       continue;
     }
 
-    const prev = map.get(p.id);
-    map.set(p.id, {
+    const prev = map.get(key);
+    map.set(key, {
       ...prev,
       ...p,
+      id: prev.id || p.id,
       name: prev.name !== "Anonymous" ? prev.name : p.name,
       major: prev.major || p.major,
       email: prev.email || p.email,
@@ -153,7 +161,7 @@ function dedupeById(list) {
 }
 
 function allKnownPeople() {
-  return dedupeById([
+  return dedupePeople([
     ...state.connections,
     ...state.incoming,
     ...state.outgoing,
@@ -177,7 +185,7 @@ function renderConnections() {
   connectionsList.innerHTML = list
     .map((p) => {
       return `
-      <div class="personCard" data-id="${p.id}">
+      <div class="personCard" data-id="${p.id || ""}" data-email="${p.email || ""}">
         <div class="avatarCircle">${p.initials}</div>
 
         <div class="personMain">
@@ -209,7 +217,7 @@ function renderRequests() {
   incomingList.innerHTML = incoming
     .map((p) => {
       return `
-      <div class="personCard softGreen" data-id="${p.id}">
+      <div class="personCard softGreen" data-id="${p.id || ""}" data-email="${p.email || ""}">
         <div class="avatarCircle">${p.initials}</div>
 
         <div class="personMain">
@@ -231,12 +239,13 @@ function renderRequests() {
   outgoingList.innerHTML = outgoing
     .map((p) => {
       return `
-      <div class="personCard" data-id="${p.id}">
+      <div class="personCard" data-id="${p.id || ""}" data-email="${p.email || ""}">
         <div class="avatarCircle">${p.initials}</div>
 
         <div class="personMain">
           <div class="personName">${p.name}</div>
           ${p.email ? `<div class="personEmail">${p.email}</div>` : ""}
+          ${!p.id && p.email ? `<div class="personMeta">Invite sent by email</div>` : ""}
           ${pillTags(p.courses)}
         </div>
 
@@ -258,9 +267,9 @@ function renderDiscover() {
 
   discoverList.innerHTML = list
     .map((p) => {
-      const alreadyConnected = state.connections.some((x) => x.id === p.id);
-      const alreadyOutgoing = state.outgoing.some((x) => x.id === p.id);
-      const alreadyIncoming = state.incoming.some((x) => x.id === p.id);
+      const alreadyConnected = state.connections.some((x) => personKey(x) === personKey(p));
+      const alreadyOutgoing = state.outgoing.some((x) => personKey(x) === personKey(p));
+      const alreadyIncoming = state.incoming.some((x) => personKey(x) === personKey(p));
 
       let label = "👤 Connect";
       let disabled = false;
@@ -277,7 +286,7 @@ function renderDiscover() {
       }
 
       return `
-      <div class="personCard" data-id="${p.id}">
+      <div class="personCard" data-id="${p.id || ""}" data-email="${p.email || ""}">
         <div class="avatarCircle">${p.initials}</div>
 
         <div class="personMain">
@@ -330,9 +339,9 @@ function renderEmailSearchResult(person, searchedEmail) {
     return;
   }
 
-  const alreadyConnected = state.connections.some((x) => x.id === person.id);
-  const alreadyOutgoing = state.outgoing.some((x) => x.id === person.id);
-  const alreadyIncoming = state.incoming.some((x) => x.id === person.id);
+  const alreadyConnected = state.connections.some((x) => personKey(x) === personKey(person));
+  const alreadyOutgoing = state.outgoing.some((x) => personKey(x) === personKey(person));
+  const alreadyIncoming = state.incoming.some((x) => personKey(x) === personKey(person));
 
   let label = "👤 Connect";
   let disabled = false;
@@ -349,7 +358,7 @@ function renderEmailSearchResult(person, searchedEmail) {
   }
 
   emailSearchResult.innerHTML = `
-    <div class="personCard" data-id="${person.id}">
+    <div class="personCard" data-id="${person.id || ""}" data-email="${person.email || ""}">
       <div class="avatarCircle">${person.initials}</div>
 
       <div class="personMain">
@@ -363,8 +372,8 @@ function renderEmailSearchResult(person, searchedEmail) {
         <button
           class="smallBtn ghost"
           data-action="connect-email-result"
-          data-id="${person.id}"
-          data-email="${person.email}"
+          data-id="${person.id || ""}"
+          data-email="${person.email || ""}"
           type="button"
           ${disabled ? "disabled" : ""}
         >
@@ -391,15 +400,15 @@ bc.onmessage = (event) => {
   if (!msg || msg.type !== "connections:outgoing:add") return;
 
   const p = normalizePerson(msg.person);
-  if (!p?.id) return;
+  const pKey = personKey(p);
 
-  const alreadyOutgoing = state.outgoing.some((x) => x.id === p.id);
-  const alreadyConnected = state.connections.some((x) => x.id === p.id);
-  const alreadyIncoming = state.incoming.some((x) => x.id === p.id);
+  const alreadyOutgoing = state.outgoing.some((x) => personKey(x) === pKey);
+  const alreadyConnected = state.connections.some((x) => personKey(x) === pKey);
+  const alreadyIncoming = state.incoming.some((x) => personKey(x) === pKey);
   if (alreadyOutgoing || alreadyConnected || alreadyIncoming) return;
 
   state.outgoing.unshift(p);
-  state.discover = state.discover.filter((x) => x.id !== p.id);
+  state.discover = state.discover.filter((x) => personKey(x) !== pKey);
 
   renderAll();
 };
@@ -411,6 +420,17 @@ function findIndexInIncoming(id) {
 
 function findIndexInOutgoing(id) {
   return state.outgoing.findIndex((p) => p.id === id);
+}
+
+function findIndexInOutgoingByCard(card) {
+  const id = card?.dataset?.id || "";
+  const email = (card?.dataset?.email || "").trim().toLowerCase();
+
+  return state.outgoing.findIndex((p) => {
+    if (id && p.id === id) return true;
+    if (!id && email && (p.email || "").trim().toLowerCase() === email) return true;
+    return false;
+  });
 }
 
 function findIndexInConnections(id) {
@@ -444,7 +464,7 @@ document.addEventListener("click", async (e) => {
     }
 
     if (action === "withdraw") {
-      const idx = findIndexInOutgoing(id);
+      const idx = findIndexInOutgoingByCard(card);
       if (idx < 0) return;
       await api.withdraw({ index: idx });
       await loadAll();
@@ -463,6 +483,7 @@ document.addEventListener("click", async (e) => {
       const person = state.discover.find((p) => p.id === id);
       if (!person) return;
       await api.send({ id: person.id });
+      alert("Connection request sent.");
       await loadAll();
       return;
     }
@@ -475,6 +496,7 @@ document.addEventListener("click", async (e) => {
       } else if (targetEmail) {
         await api.send({ email: targetEmail });
       }
+      alert("Connection request sent.");
       await loadAll();
       return;
     }
@@ -483,6 +505,7 @@ document.addEventListener("click", async (e) => {
       const targetEmail = btn.dataset.email || "";
       if (!targetEmail) return;
       await api.send({ email: targetEmail });
+      alert("Connection request sent.");
       await loadAll();
       return;
     }
@@ -555,23 +578,22 @@ async function loadAll() {
     api.interests({ fields }),
   ]);
 
-  state.connections = dedupeById((connectionsRes.data || []).map((p) => normalizePerson(p, "connections")));
-  state.incoming = dedupeById((incomingRes.data || []).map((p) => normalizePerson(p, "incoming")));
-  state.outgoing = dedupeById((outgoingRes.data || []).map((p) => normalizePerson(p, "outgoing")));
+  state.connections = dedupePeople((connectionsRes.data || []).map((p) => normalizePerson(p, "connections")));
+  state.incoming = dedupePeople((incomingRes.data || []).map((p) => normalizePerson(p, "incoming")));
+  state.outgoing = dedupePeople((outgoingRes.data || []).map((p) => normalizePerson(p, "outgoing")));
 
   const discoverRaw = [
     ...((commonRes.data || []).map((p) => normalizePerson(p, "common"))),
     ...((interestsRes.data || []).map((p) => normalizePerson(p, "interests"))),
   ];
 
-  state.discover = dedupeById(discoverRaw)
+  state.discover = dedupePeople(discoverRaw)
     .filter((p) => p.id)
-    .filter((p) => !state.connections.some((x) => x.id === p.id))
+    .filter((p) => !state.connections.some((x) => personKey(x) === personKey(p)))
     .sort((a, b) => (b.common || 0) - (a.common || 0));
 
   renderAll();
 
-  // keep email result fresh if user already typed something
   const currentEmail = (emailSearchInput?.value || "").trim();
   if (currentEmail) {
     renderEmailSearchResult(findLoadedPersonByEmail(currentEmail), currentEmail);
