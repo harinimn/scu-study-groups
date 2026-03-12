@@ -46,6 +46,7 @@ const connectionsList = document.getElementById("connectionsList");
 const incomingList = document.getElementById("incomingList");
 const outgoingList = document.getElementById("outgoingList");
 const discoverList = document.getElementById("discoverList");
+const emailSearchResult = document.getElementById("emailSearchResult");
 
 const elCountConnections = document.getElementById("countConnections");
 const elCountRequests = document.getElementById("countRequests");
@@ -54,6 +55,8 @@ const elOutgoingCount = document.getElementById("outgoingCount");
 
 const searchInput = document.getElementById("searchInput");
 const clearSearchBtn = document.getElementById("clearSearchBtn");
+const emailSearchInput = document.getElementById("emailSearchInput");
+const emailSearchBtn = document.getElementById("emailSearchBtn");
 
 /* Helpers */
 function initialsFromName(name) {
@@ -147,6 +150,15 @@ function dedupeById(list) {
   }
 
   return [...map.values()];
+}
+
+function allKnownPeople() {
+  return dedupeById([
+    ...state.connections,
+    ...state.incoming,
+    ...state.outgoing,
+    ...state.discover,
+  ]);
 }
 
 function setCounts() {
@@ -292,6 +304,77 @@ function renderDiscover() {
   }
 }
 
+function renderEmailSearchResult(person, searchedEmail) {
+  if (!emailSearchResult) return;
+
+  if (!searchedEmail) {
+    emailSearchResult.innerHTML = "";
+    return;
+  }
+
+  if (!person) {
+    emailSearchResult.innerHTML = `
+      <div class="personCard">
+        <div class="avatarCircle">?</div>
+        <div class="personMain">
+          <div class="personName">${searchedEmail}</div>
+          <div class="personMeta">No loaded user matched this email. You can still send a request by email.</div>
+        </div>
+        <div class="actions">
+          <button class="smallBtn ghost" data-action="connect-email" data-email="${searchedEmail}" type="button">
+            Send Request
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const alreadyConnected = state.connections.some((x) => x.id === person.id);
+  const alreadyOutgoing = state.outgoing.some((x) => x.id === person.id);
+  const alreadyIncoming = state.incoming.some((x) => x.id === person.id);
+
+  let label = "👤 Connect";
+  let disabled = false;
+
+  if (alreadyConnected) {
+    label = "Connected";
+    disabled = true;
+  } else if (alreadyOutgoing) {
+    label = "Requested";
+    disabled = true;
+  } else if (alreadyIncoming) {
+    label = "Incoming";
+    disabled = true;
+  }
+
+  emailSearchResult.innerHTML = `
+    <div class="personCard" data-id="${person.id}">
+      <div class="avatarCircle">${person.initials}</div>
+
+      <div class="personMain">
+        <div class="personName">${person.name}</div>
+        ${person.major ? `<div class="personMeta">${person.major}</div>` : ""}
+        ${person.email ? `<div class="personEmail">${person.email}</div>` : ""}
+        ${pillTags(person.courses)}
+      </div>
+
+      <div class="actions">
+        <button
+          class="smallBtn ghost"
+          data-action="connect-email-result"
+          data-id="${person.id}"
+          data-email="${person.email}"
+          type="button"
+          ${disabled ? "disabled" : ""}
+        >
+          ${label}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function renderAll() {
   setCounts();
   renderConnections();
@@ -342,7 +425,6 @@ document.addEventListener("click", async (e) => {
   const action = btn.dataset.action;
   const card = btn.closest(".personCard");
   const id = card?.dataset?.id;
-  if (!id) return;
 
   try {
     if (action === "accept") {
@@ -384,6 +466,26 @@ document.addEventListener("click", async (e) => {
       await loadAll();
       return;
     }
+
+    if (action === "connect-email-result") {
+      const targetId = btn.dataset.id || "";
+      const targetEmail = btn.dataset.email || "";
+      if (targetId) {
+        await api.send({ id: targetId });
+      } else if (targetEmail) {
+        await api.send({ email: targetEmail });
+      }
+      await loadAll();
+      return;
+    }
+
+    if (action === "connect-email") {
+      const targetEmail = btn.dataset.email || "";
+      if (!targetEmail) return;
+      await api.send({ email: targetEmail });
+      await loadAll();
+      return;
+    }
   } catch (err) {
     console.error("Action failed:", action, err);
     alert("Backend error. Try again.");
@@ -403,6 +505,35 @@ if (clearSearchBtn) {
     state.query = "";
     if (searchInput) searchInput.value = "";
     renderAll();
+  });
+}
+
+/* Email search */
+function findLoadedPersonByEmail(email) {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized) return null;
+
+  return allKnownPeople().find((p) => String(p.email || "").trim().toLowerCase() === normalized) || null;
+}
+
+if (emailSearchBtn) {
+  emailSearchBtn.addEventListener("click", () => {
+    const email = (emailSearchInput?.value || "").trim();
+    if (!email) {
+      renderEmailSearchResult(null, "");
+      return;
+    }
+
+    const match = findLoadedPersonByEmail(email);
+    renderEmailSearchResult(match, email);
+  });
+}
+
+if (emailSearchInput) {
+  emailSearchInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    emailSearchBtn?.click();
   });
 }
 
@@ -439,6 +570,12 @@ async function loadAll() {
     .sort((a, b) => (b.common || 0) - (a.common || 0));
 
   renderAll();
+
+  // keep email result fresh if user already typed something
+  const currentEmail = (emailSearchInput?.value || "").trim();
+  if (currentEmail) {
+    renderEmailSearchResult(findLoadedPersonByEmail(currentEmail), currentEmail);
+  }
 }
 
 /* Boot */

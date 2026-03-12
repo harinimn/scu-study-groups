@@ -45,6 +45,28 @@
             </div>
           </div>
 
+          <!-- Email connect -->
+          <div class="divider"></div>
+
+          <div class="panelHeader">
+            <div class="panelTitle">Connect by Email</div>
+            <div class="panelSub">Enter an SCU email to send a connection request directly</div>
+          </div>
+
+          <div class="connSearch">
+            <span class="searchIcon">📧</span>
+            <input
+              id="emailSearchInput"
+              class="textInput"
+              type="email"
+              placeholder="Enter SCU email..."
+              autocomplete="off"
+            />
+            <button id="emailSearchBtn" class="smallBtn primary" type="button">Find</button>
+          </div>
+
+          <div class="list" id="emailSearchResult"></div>
+
           <!-- segmented tabs -->
           <div class="segmented" role="tablist" aria-label="Connections tabs">
             <button class="segBtn isActive" data-tab="connections" type="button">

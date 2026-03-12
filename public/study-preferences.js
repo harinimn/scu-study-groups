@@ -99,6 +99,28 @@ function itemBodyHTML({ course, section }) {
       </div>
     </div>
 
+    <div class="divider"></div>
+
+    <div class="formRow">
+      <div class="rowLabel">
+        <span class="rowIcon">♀</span>
+        <div>
+          <div class="rowTitle">Group restriction</div>
+          <div class="rowSub">Choose if you want this study group restricted to non-male students only</div>
+        </div>
+      </div>
+
+      <div class="choiceList">
+        <label class="choiceCard">
+          <input type="checkbox" data-field="nonMaleOnly" />
+          <div class="choiceText">
+            <div class="choiceTitle">Non-male only</div>
+            <div class="choiceSub">Restrict this study group to women / non-male students only</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
     <button class="saveBtn" type="button">Save Preferences for ${course}</button>
   `;
 }
@@ -172,6 +194,11 @@ function applySavedPreferences(item) {
     if (sameSectionBox) sameSectionBox.checked = false;
     if (otherSectionsBox) otherSectionsBox.checked = true;
   }
+
+  const nonMaleOnlyBox = item.querySelector('input[data-field="nonMaleOnly"]');
+  if (nonMaleOnlyBox && typeof classData.gender === "boolean") {
+    nonMaleOnlyBox.checked = classData.gender;
+  }
 }
 
 function renderClasses(classes) {
@@ -216,7 +243,7 @@ function wireAccordion() {
   acc.querySelectorAll(".accItem").forEach((item) => {
     wireGridInteractions(item);
     wireSave(item);
-    applySavedPreferences(item); 
+    applySavedPreferences(item);
   });
 }
 
@@ -307,7 +334,9 @@ function wireSave(item) {
 
     const wantsOtherSections = studyWith.includes("other_sections");
     const section = !wantsOtherSections;
-    const gender = false;
+
+    const nonMaleOnlyBox = item.querySelector('input[data-field="nonMaleOnly"]');
+    const gender = !!nonMaleOnlyBox?.checked;
 
     const payload = {
       quarter: ACTIVE_QUARTER,
