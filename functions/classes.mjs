@@ -116,9 +116,10 @@ export const listSection = onCall(async (request) => {
     if (ref.id == uid || !ref_data.classes[data.quarter]) continue;
     const section = ref_data.classes[data.quarter].find((val) =>
       val.course == search.course && val.section == search.section);
+    if (!section) continue;
     const vis = Math.min(def, section.vis);
-    if (section && (vis <= 2 || await checkVis(
-        connections, classes, ref_data.classes, ref.id, vis, groups))) {
+    if (vis <= 2 || await checkVis(
+        connections, classes, ref_data.classes, ref.id, vis, groups)) {
       out.push(await visProfile(
           data.fields, classes, connections, ref.id, ref_data, groups));
     }
@@ -157,9 +158,10 @@ export const listCourse = onCall(async (request) => {
     if (ref.id == uid || !ref_data.classes[data.quarter]) continue;
     const section = ref_data.classes[data.quarter].find((val) =>
       val.course == search.course && val.section != search.section);
+    if (!section) continue;
     const vis = Math.min(def, section.vis);
-    if (section && (vis <= 1 || await checkVis(
-        connections, classes, ref_data.classes, ref.id, vis, groups))) {
+    if (vis <= 1 || await checkVis(
+        connections, classes, ref_data.classes, ref.id, vis, groups)) {
       out.push(await visProfile(
           data.fields, classes, connections, ref.id, ref_data, groups));
     }

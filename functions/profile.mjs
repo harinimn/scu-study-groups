@@ -2,10 +2,12 @@
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {initializeApp} from "firebase-admin/app";
+import {getAuth} from "firebase-admin/auth";
 import {FieldValue, getFirestore} from "firebase-admin/firestore";
 import {logger} from "firebase-functions";
 
 initializeApp();
+const auth = getAuth();
 const db = getFirestore();
 
 /** Sets this users's profile information (main user visible info)
@@ -71,9 +73,14 @@ export const get = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
 
+  const ref = db.doc("users/" + request.auth.uid);
+  if (!ref.exists) {
+    return [];
+  }
+
   // eslint-disable-next-line no-unused-vars
   const {classes, courses, connections, pending, outgoing, ...out} =
-    (await db.doc("users/" + request.auth.uid).get()).data();
+      (await ref.get()).data();
   logger.debug(out);
   return out;
 });
@@ -110,4 +117,5 @@ export const remove = onCall(async (request) => {
   }
 
   await ref.delete();
+  await auth.deleteUser(uid);
 });
