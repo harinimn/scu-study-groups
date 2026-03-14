@@ -165,7 +165,7 @@ export const list = onCall(async (request) => {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
       out.push(await visProfile(
-          data.fields, classes, connections, id, ref, groups));
+          data.fields, classes, [id], id, ref, groups));
     }
   }
   return out;
@@ -186,7 +186,6 @@ export const pending = onCall(async (request) => {
   const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
-  const connections = res.connections;
   const groups = await db.collection("groups").where("count", "!=", 1)
       .where("members", "array-contains", uid).get();
   const out = [];
@@ -196,8 +195,7 @@ export const pending = onCall(async (request) => {
   for (const id of res.pending) {
     const ref = (await db.doc("users/" + id).get()).data();
     if (ref.def_vis != 5) {
-      out.push(await visProfile(data.fields,
-          classes, connections, id, ref, groups));
+      out.push(await visProfile(data.fields, classes, [id], id, ref, groups));
     }
   }
   return out;
@@ -218,7 +216,6 @@ export const outgoing = onCall(async (request) => {
   const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
-  const connections = res.connections;
   const groups = await db.collection("groups").where("count", "!=", 1)
       .where("members", "array-contains", uid).get();
   const out = [];
@@ -231,8 +228,7 @@ export const outgoing = onCall(async (request) => {
     if (ref.exists) {
       const data = ref.data();
       if (data.def_vis != 5) {
-        out.push(await visProfile(fields,
-            classes, connections, id, data, groups));
+        out.push(await visProfile(fields, classes, [], id, data, groups));
       }
     } else {
       out.push({id: null, email: id});
@@ -258,18 +254,19 @@ export const common = onCall(async (request) => {
   const res = (await db.doc("users/" + uid).get()).data();
 
   const classes = res.classes;
-  const connections = res.connections;
-  if (!connections || connections.length == 0) return [];
-  const set = new Set(connections);
+  const connections = res.connections.concat(res.pending);
+  if (!res.connections || res.connections.length == 0) return [];
+  const set = new Set(res.connections);
   const groups = await db.collection("groups").where("count", "!=", 1)
       .where("members", "array-contains", uid).get();
   const query = await db.collection("users")
       .where("def_vis", "!=", 5)
-      .where("connections", "array-contains-any", connections).get();
+      .where("connections", "array-contains-any", res.connections).get();
   const out = [];
   for (const ref of query.docs) {
     const data = ref.data();
-    if (ref.id != uid && await checkVis(connections,
+    if (ref.id != uid && !connections.includes(ref.id) &&
+        !res.outgoing.includes(ref.id) && await checkVis(connections,
         classes, data.classes, ref.id, data.def_vis, groups)) {
       const cur = await visProfile(
           fields, classes, connections, ref.id, data, groups);
@@ -295,7 +292,7 @@ export const interests = onCall(async (request) => {
 
   const res = (await db.doc("users/" + uid).get()).data();
   const classes = res.classes;
-  const connections = res.connections;
+  const connections = res.connections.concat(res.pending);
   const interests = res.interests;
   if (!interests || interests.length == 0) return [];
   const set = new Set(interests);
@@ -307,7 +304,8 @@ export const interests = onCall(async (request) => {
   const out = [];
   for (const ref of query.docs) {
     const data = ref.data();
-    if (ref.id != uid && await checkVis(connections,
+    if (ref.id != uid && !connections.includes(ref.id) &&
+        !res.outgoing.includes(ref.id) && await checkVis(connections,
         classes, data.classes, ref.id, data.def_vis, groups)) {
       const cur = await visProfile(
           fields, classes, connections, ref.id, data, groups);

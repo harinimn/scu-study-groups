@@ -105,7 +105,8 @@ export const set = onCall(async (request) => {
  * @param {Map<string, any>} fields profile fields with field:default
  * @throws {HttpsError<unauthenticated>} if current user is unauthenticated
  * @returns {Array<Map<string, any>>} the groups, with id,
- *  time (see @function set ),and members (containing @function visProfile )
+ *  time (see @function set ), and members (containing @function visProfile and
+ *  connection status: "", "connected", "pending", "outgoing")
  */
 export const get = onCall(async (request) => {
   const data = request.data;
@@ -127,15 +128,24 @@ export const get = onCall(async (request) => {
       .where("course", "==", classes[data.quarter][data.class].course).get();
 
   const out = [];
-  const connections = res.connections;
+  const connections = res.connections.concat(res.pending);
   for (const ref of inside.docs) {
     const ref_data = ref.data();
     const add = {id: ref.id, time: ref_data.time, members: []};
     for (const id of ref_data.members) {
       if (id == uid) continue;
-      add.members.push(await visProfile(data.fields,
+      const prof = await visProfile(data.fields,
           classes, connections,
-          id, (await db.doc("users/" + id).get()).data(), groups));
+          id, (await db.doc("users/" + id).get()).data(), groups);
+      prof.connection = "";
+      if (res.connections.includes(id)) {
+        prof.connection = "connected";
+      } else if (res.outgoing.includes(id)) {
+        prof.connection = "outgoing";
+      } else if (res.pending.includes(id)) {
+        prof.connection = "pending";
+      }
+      add.members.push(prof);
     }
     out.push(add);
   }

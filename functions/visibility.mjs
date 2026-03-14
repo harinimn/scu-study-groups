@@ -48,7 +48,7 @@ export async function checkVis(
     return false;
   }
 
-  for (const [quarter, classes] in seen) {
+  for (const [quarter, classes] of Object.entries(seen)) {
     if (!looker[quarter]) continue;
     const potential = looker[quarter];
     for (const c of classes) {
